@@ -1,0 +1,22 @@
+@"
+name: fraud-detection
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pandas
+  - numpy
+  - requests
+  - beautifulsoup4
+  - lxml
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - plotly
+  - folium
+  - sqlalchemy
+  - psycopg2
+  - python-dotenv
+  - kaggle
+  - jupyterlab
+"@ | Set-Content environment.yml
