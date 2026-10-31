@@ -1,4 +1,3 @@
-@"
 name: fraud-detection
 channels:
   - conda-forge
@@ -19,4 +18,3 @@ dependencies:
   - python-dotenv
   - kaggle
   - jupyterlab
-"@ | Set-Content environment.yml

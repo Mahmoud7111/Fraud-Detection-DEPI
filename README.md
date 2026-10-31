@@ -121,7 +121,7 @@ Kaggle authentication is required by the CLI. Do not commit API keys, tokens, do
 
 ## Current Deliverables
 
-- [ ] Profile the primary dataset and document its real messiness
+- [x] Profile the primary dataset and document its real messiness
 - [ ] Complete the throttled IP lookup and failure log
 - [ ] Scrape and clean the CPI table
 - [ ] Build the merged clean table and country mapping
@@ -133,6 +133,14 @@ Kaggle authentication is required by the CLI. Do not commit API keys, tokens, do
 - [ ] Build and test the live prediction application
 - [ ] Build and publish the dashboard
 - [ ] Complete the report, README results, and presentation
+
+### Business brief and detailed profiling
+
+- [Business understanding draft](docs/01_business_understanding.md): objective, stakeholders, success measures, scope, and open decisions.
+- [Detailed data-understanding notebook](notebooks/01_data_understanding.ipynb): checks both source CSVs, timestamps, categories, unusual values, and IP-country lookup coverage. The original `01_understanding.ipynb` remains available.
+- To run the detailed notebook, put both `Fraud_Data.csv` and `IpAddress_to_Country.csv` in `data/raw/`, then select the project Python environment and run all cells. Raw data stays local because `data/` is ignored by Git.
+- Findings: 151,112 purchases, 9.36% labeled fraud, no missing values or duplicate rows, and 21,966 purchases without a match in the static IP-country lookup. All 7,600 purchases made one second after signup are labeled fraud; this pattern needs investigation.
+- Next: document the fractional-IP conversion rule, test a small live API lookup sample, and build the CPI scraper. API collection and scraping are still pending.
 
 ## Limitations
 
