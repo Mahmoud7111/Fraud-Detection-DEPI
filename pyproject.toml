@@ -1,0 +1,6 @@
+[tool.pyrefly]
+python-interpreter-path = "C:\\Users\\asus\\miniforge3\\envs\\fraud-detection\\python.exe"
+search-path = [
+    ".",
+    "src",
+]

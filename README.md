@@ -1,155 +1,226 @@
-# Fraud Detection for E-Commerce Transactions
+# Fraud Screening Project — E-Commerce Transactions
 
-An end-to-end DEPI capstone project for detecting potentially fraudulent e-commerce purchases at the moment of purchase. The project combines transaction data, IP geolocation, country risk data, exploratory analysis, machine learning, and a deployable application.
+An end-to-end DEPI Data Science capstone project for detecting potentially fraudulent e-commerce purchases at the moment of order placement. The project combines transaction data, IP geolocation, country risk data, exploratory analysis, machine learning pipelines, a visual dashboard, and a deployable application.
 
-> **Project status:** In progress. Modeling results, the live application, and the public dashboard will be added as those phases are completed.
+> **Project status:** In progress — Phases 1–3 complete. `transactions_merged.csv` ready. See deliverables table below.
+
+---
 
 ## Business Objective
 
-Identify purchases that should be blocked or reviewed while minimizing unnecessary declines of legitimate customers.
+Identify purchases that should be screened or reviewed before order fulfillment while minimizing unnecessary manual review capacity on legitimate customers.
 
-- **ML task:** Binary classification
+- **ML Task:** Binary classification
 - **Target:** `class` (`1` = fraud, `0` = legitimate)
-- **Primary success measures:** Precision, recall, F1-score, ROC-AUC, and precision-recall AUC
-- **Decision principle:** The final classification threshold will reflect the cost of missed fraud versus the cost of declining a legitimate customer.
+- **Primary Success Metric:** PR-AUC (Precision-Recall AUC) and Review Capacity (frauds caught in top-k orders, e.g. top 10, 50, 100)
+- **Decision Principle:** The review threshold is chosen on **validation data only** based on the merchant's operational review capacity.
+
+---
 
 ## Data Sources
 
-### Primary transaction data
+1. **Primary Transaction Data:**
+   - Source: [Fraud E-Commerce dataset](https://www.kaggle.com/datasets/vbinh002/fraud-ecommerce) (`Fraud_Data.csv`)
+   - Untouched raw file kept in `data/raw/`
+   - Companion static mapping: `data/raw/IpAddress_to_Country.csv`
+2. **IP Geolocation API:**
+   - Source: [ip-api.com](http://ip-api.com/) batch endpoint (100 IPs/batch, max 15 requests/min)
+   - Resumable collector saves progress incrementally to `data/interim/ip_lookup.csv`
+3. **Country Risk Data:**
+   - Source: Transparency International Corruption Perceptions Index (CPI) scraped from [Wikipedia](https://en.wikipedia.org/wiki/Corruption_Perceptions_Index)
+   - Raw HTML cached in `data/interim/cpi_raw.html`, parsed table saved to `data/interim/cpi.csv`
 
-The project uses the [Fraud E-Commerce dataset](https://www.kaggle.com/datasets/vbinh002/fraud-ecommerce), including `Fraud_Data.csv`. The raw download is kept unchanged in `data/raw/`.
-
-The first profiling pass records:
-
-- Dataset shape, column types, missing values, and duplicate rows
-- Class balance
-- Age and purchase-value ranges
-- Signup and purchase date ranges
-- Purchases that occur before signup
-- Devices shared by multiple users
-- The number of unique IP addresses
-
-### IP geolocation API
-
-Numeric IP addresses are converted to dotted-quad form with Python's `ipaddress` module and looked up through [ip-api.com](http://ip-api.com/). The lookup records country, country code, request status, and proxy/hosting flags when available.
-
-Requests are deduplicated, sent in batches of up to 100 addresses, throttled to respect the free API limit, and saved incrementally. Failed and incomplete responses are retained as data-quality evidence rather than silently removed.
-
-### Country risk data
-
-The relevant Corruption Perceptions Index table is scraped from [Wikipedia](https://en.wikipedia.org/wiki/Corruption_Perceptions_Index). A country-name mapping joins the scraped score to the IP country. Unmatched countries are flagged and reported instead of being guessed.
-
-## Methodology
-
-The work follows the six CRISP-DM phases:
-
-1. **Business understanding:** define the decision objective and cost trade-off.
-2. **Data understanding:** profile the raw transaction data and collect API and scraped data.
-3. **Data preparation:** parse dates, standardize categories, handle invalid values, and merge sources.
-4. **Exploration and feature engineering:** analyze fraud patterns and build model-ready features.
-5. **Modeling:** compare class-weighted models in reproducible scikit-learn pipelines.
-6. **Evaluation and deployment:** select a cost-aware threshold, serve predictions, and publish the dashboard.
-
-Planned features include:
-
-- `seconds_since_signup`
-- `hour_of_day` and `day_of_week`
-- `users_per_device` and `users_per_ip`
-- `ip_country` and `country_risk_index`
-- `is_proxy` and `is_hosting`
-- Purchase value, age, sex, source, and browser
-
-Raw identifiers such as `user_id`, `device_id`, and `ip_address` are not used directly as model features because their high cardinality can lead to leakage and poor generalization.
-
-## Planned Models
-
-The model comparison will begin with a class-weighted Logistic Regression baseline, followed by:
-
-- Decision Tree
-- K-Nearest Neighbors
-- Support Vector Machine on a suitable sample if required for runtime
-- Random Forest or gradient boosting as an additional tabular baseline
-
-Each model will use a scikit-learn `Pipeline`. Experiments will be tracked with MLflow, and the selected pipeline will be saved with `joblib`. Evaluation will use a held-out, stratified test set and will not rely on accuracy alone.
+---
 
 ## Repository Structure
 
 ```text
-data/
-	raw/                 Untouched downloads, API responses, and scraped files
-	processed/           Cleaned, merged, and feature tables
-notebooks/             Reproducible analysis and collection notebooks
-src/                   Reusable lookup, scraping, cleaning, and feature code
-models/                Saved model pipelines and evaluation artifacts
-app/                   Live transaction prediction application
-dashboard/             Interactive visual dashboard
-tests/                 Automated tests
-environment.yml        Conda environment definition
+fraud-detection/
+├── environment.yml             # Conda environment definition
+├── README.md                   # Project overview, setup, and instructions
+├── .gitignore                  # Git ignore rules (protects data/ and credentials)
+├── .github/
+│   ├── workflows/ci.yml        # Continuous integration automated test runner
+│   ├── pull_request_template.md# PR review checklist and contract declaration
+│   └── CODEOWNERS              # Path ownership and required PR reviewers
+├── data/
+│   ├── raw/                    # Untouched downloads (Fraud_Data.csv, IpAddress_to_Country.csv)
+│   ├── interim/                # ip_lookup.csv, cpi.csv, country_name_map.csv, transactions_clean.csv
+│   └── processed/              # transactions_merged.csv, features.csv
+├── notebooks/                  # Exploratory notebooks (named NN_topic_<initial>.ipynb)
+├── scripts/                    # Command-line entry points executed in sequence
+│   ├── 01_collect_ips.py       # Extract unique IPs and run resumable API lookup
+│   ├── 02_scrape_cpi.py        # Scrape and parse CPI table; build country map
+│   ├── 03_build_dataset.py     # Clean data and merge IP + CPI sources
+│   ├── 04_build_features.py    # Compute point-in-time features & assign splits
+│   └── 05_train.py             # Run model experiments across all 5 families
+├── src/
+│   ├── config.py               # Central paths, seed (42), and API parameters
+│   ├── common/                 # io.py (load_raw), ips.py (IP conversion utilities)
+│   ├── collect/                # ip_lookup.py, cpi_scrape.py
+│   ├── prep/                   # clean.py, merge.py
+│   ├── features.py             # Point-in-time feature extraction (Contract C5)
+│   ├── evaluation.py           # Standardized evaluation metrics (Contract C8)
+│   ├── modeling/               # pipeline.py (shared training harness & experiment runner)
+│   └── scoring.py              # Live scoring interface for app (Contract C7)
+├── models/                     # Saved fraud_pipeline.joblib, input_spec.json, threshold.json
+├── dashboard/                  # Historical EDA and performance dashboard
+├── app/                        # Live prediction application (Stage A: CSV & single order)
+├── tests/
+│   ├── fixtures/               # sample_transactions.csv (small committed test data)
+│   └── test_*.py               # Automated pytest suite (C1-C8 contract enforcement)
+└── docs/                       # Project contracts, cleaning logs, feature definitions
+    ├── contracts.md
+    ├── cleaning_log.md
+    ├── features.md
+    ├── data_sources.md
+    ├── split_strategy.md
+    ├── evaluation_plan.md
+    ├── model_card.md
+    ├── feature_availability.md
+    └── instructor_answers.md
 ```
 
-## Setup
+---
 
-Create and activate the Conda environment:
+## Setup & Environment
+
+### Option A: Using Conda (Recommended)
+
+1. Open your terminal (or Miniforge / Anaconda Prompt):
+   ```bash
+   conda env create -f environment.yml
+   conda activate fraud-detection
+   ```
+
+2. Configure VS Code:
+   - Press `Ctrl + Shift + P`
+   - Select **Python: Select Interpreter**
+   - Choose `Python ('fraud-detection': conda)`
+
+### Option B: Using Standard Python / Pip
+
+If using system Python or a virtual environment:
+```bash
+pip install pandas numpy requests beautifulsoup4 lxml scikit-learn matplotlib seaborn plotly folium sqlalchemy pytest mlflow joblib python-dotenv
+```
+
+---
+
+## Execution Order
+
+The data pipeline and modeling run sequentially via the scripts:
 
 ```bash
-conda env create -f environment.yml
-conda activate fraud-detection
+# 1. Collect IP geolocation data from API (resumable)
+python scripts/01_collect_ips.py           # ✅ done — 143,510 IPs, 85.7% success
+
+# 2. Scrape and map country CPI scores
+python scripts/02_scrape_cpi.py            # ✅ done — 182 countries, 94.7% matched
+
+# 3. Clean raw transactions and join IP + CPI data
+python scripts/03_build_dataset.py         # ✅ done — 151,112 rows, 84.8% CPI matched
+
+# 4. Generate point-in-time features with chronological train/valid/test split
+python scripts/04_build_features.py        # ⏸ next
+
+# 5. Train all model families, track runs in MLflow, and evaluate on validation data
+python scripts/05_train.py                 # ⏸ after gate G1
 ```
 
-Start JupyterLab:
+---
 
-```bash
-jupyter lab
-```
+## Deliverables Tracker
 
-The Kaggle dataset can be downloaded into the raw-data directory with the Kaggle CLI:
+> [!NOTE]
+> Dev A bootstrapped the full project skeleton, data pipeline, and test suite to unblock the team. Tasks completed during setup are credited to Dev A. Each teammate picks up their remaining tasks from their branch.
 
-```bash
-kaggle datasets download -d vbinh002/fraud-ecommerce -p data/raw --unzip
-```
+### Phase 1 — Foundations
 
-Kaggle authentication is required by the CLI. Do not commit API keys, tokens, downloaded credentials, or other secrets.
+| Task | Description | Owner | Status |
+|---|---|---|---|
+| T1.1 | Repo, structure, `environment.yml`, CI, PR template, CODEOWNERS | **A** | ✅ Done |
+| T1.2 | Profile primary data (shape, dtypes, nulls, balance, IPs, dates) | **A** | ✅ Done — 151,112 rows, 9.36% fraud, 143,510 unique IPs |
+| T1.3 | Write and sign `docs/contracts.md` | All | ⏸ Written — needs team sign-off |
+| T1.4 | Send instructor questions with real data profile | **D** | ⏸ Not sent yet |
+| T1.5 | Merchant-feasibility matrix | C + E | ⏸ Template written — needs team input |
+| T1.6 | Shared utilities: `load_raw()`, IP conversion, `config.py` | **A** | ✅ Done |
 
-## Reproducibility Rules
+### Phase 2 — Collection
 
-- Keep source downloads untouched in `data/raw/`.
-- Save API results after every batch so interrupted runs can resume.
-- Record cleaning decisions in the cleaning log.
-- Fit encoders, scalers, and other transformations only on the training data.
-- Use the same saved train/test split for model comparison.
-- Keep failed lookups and unmatched country names visible in the quality report.
+| Task | Description | Owner | Status |
+|---|---|---|---|
+| T2.1 | Validate IPs, deduplicate → `unique_ips.csv` | **A** | ✅ Done — 143,510 unique IPs |
+| T2.2 | Resumable IP collector → `ip_lookup.csv` | **A** | ✅ Done — 129,651 successes (85.8%), 736 proxy, 13,207 hosting |
+| T2.3 | Compare static IP-country file vs API on a sample | **B** | ⏸ Not started |
+| T2.4 | Scrape Wikipedia CPI table → `cpi.csv` | **A** | ✅ Done — 182 countries |
+| T2.5 | Country-name map + match-rate report | **A** | ✅ Done — 94.7% coverage (126/133) |
+| T2.6 | Source notes in `docs/data_sources.md` | **A** | ✅ Done — both IP and CPI sections filled |
 
-## Current Deliverables
+### Phase 3 — Cleaning & Integration
 
-- [ ] Profile the primary dataset and document its real messiness
-- [ ] Complete the throttled IP lookup and failure log
-- [ ] Scrape and clean the CPI table
-- [ ] Build the merged clean table and country mapping
-- [ ] Produce EDA charts and the feature table
-- [ ] Save a stratified train/test split
-- [ ] Train and compare models
-- [ ] Select a cost-aware decision threshold
-- [ ] Save the selected model pipeline
-- [ ] Build and test the live prediction application
-- [ ] Build and publish the dashboard
-- [ ] Complete the report, README results, and presentation
+| Task | Description | Owner | Status |
+|---|---|---|---|
+| T3.1 | Clean primary data | **A** | ✅ Done — 151,112 rows in, 151,112 out (0 removed) |
+| T3.2 | Join IP results | **A** | ✅ Done — 85.8% success (129,651 / 151,112 rows matched) |
+| T3.3 | Join CPI through map | **A** | ✅ Done — 84.8% matched (128,107 / 151,112 rows) |
+| T3.4 | Cleaning log | **A** | ✅ Done — 7 entries recorded in `docs/cleaning_log.md` |
+| T3.5 | One-command rebuild script + data tests | **A** | ✅ Done — `transactions_merged.csv` saved |
 
-## Limitations
+### Phase 4 — EDA, Features & Dashboard
 
-The transaction data is historical, while live IP geolocation can change over time. Country-risk values also represent the CPI year selected for the dataset period, not necessarily current conditions. Results should therefore be treated as coursework evidence from one dataset, not as a production fraud decision system.
+| Task | Description | Owner | Status |
+|---|---|---|---|
+| T4.1 | EDA notebook | **A** | ⏸ Not started |
+| T4.2 | Feature definitions + `src/features.py` | **A** | ✅ Done — 19 features (temporal, demographic, IP, CPI, device/IP counts) |
+| T4.3 | Split strategy memo | **A** | ✅ Done — chronological 70/15/15; fraud rate shift documented |
+| T4.4 | Build `features.csv` and tests | **A** | ✅ Done — 151,112 rows × 19 features, 44/44 tests passing |
+| T4.5 | Historical dashboard draft | E | ⏸ Not started |
+| T4.6 | Check dashboard numbers | B | ⏸ Not started |
+| T4.7 | Evaluation plan | D | ⏸ Template ready |
+| T4.8 | `src/evaluation.py` and tests | **A** | ✅ Done — 8 evaluation tests passing |
 
-The free ip-api endpoint is HTTP-only and intended for non-commercial use. It is used here for coursework and its limitations will be documented in the final report.
+### Phase 5 — Modeling (after Gate G1)
 
-## Team Workflow
+| Task | Description | Owner | Status |
+|---|---|---|---|
+| T5.1 | Shared training harness | D | ⏸ Stub written |
+| T5.2 | Five model experiments | A, B, C, D, E | ⏸ Not started |
+| T5.3 | Ablation (IP features, CPI) | **B** leads | ⏸ Not started |
+| T5.4–5.6 | Select model, threshold, save package | D | ⏸ Not started |
+| T5.7–5.8 | `score_orders()` + parity test | **C** | ⏸ Stub written |
 
-Work is organized by workstream and merged through reviewed branches. The proposed ownership is:
+### Phase 6 — Delivery & Phase 7 — Documentation
 
-| Role | Responsibility |
+| Task | Status |
 |---|---|
-| A | Primary data acquisition and IP lookup |
-| B | CPI scraping, country mapping, and database work |
-| C | Cleaning, EDA, and feature engineering |
-| D | Modeling, evaluation, threshold selection, and MLflow |
-| E | Application, dashboard, CI, deployment, and final integration |
+| App, dashboard, deploy, slides, report | ⏸ Not started |
 
-Everyone should be able to explain the complete pipeline and the decisions recorded in the report.
+### Running Automated Tests
+
+Run the contract verification test suite at any time:
+```bash
+pytest tests/ -v
+```
+
+---
+
+## Team Ownership & Split
+
+| Dev | Core Responsibility (Stage A) | Files Owned | PR Reviewer |
+|---|---|---|---|
+| **A** (you) | Project lead & full pipeline bootstrap | everything bootstrapped + `notebooks/04_eda_A.ipynb` (T4.1) & decision tree (T5.2) | C |
+| **B** | Country data comparison, dashboard review & ablation lead | `docs/data_sources.md` (T2.3), `dashboard/` checks (T4.6), KNN & ablations (T5.2, T5.3) | C |
+| **C** | Feature maintainer, live scoring, RF/GBM & app validation | `src/scoring.py` (T5.7–T5.8), `app/` validation (T6.3), RF/GBM (T5.2), feasibility (T1.5) | D |
+| **D** | Evaluation plan, training harness, model selection & instructor comms | `docs/instructor_answers.md` (T1.4), `docs/evaluation_plan.md` (T4.7), `src/modeling/` (T5.1), logreg (T5.2), `models/` (T5.4–T5.6) | E |
+| **E** | Visual dashboard & deployable application | `dashboard/` (T4.5, T6.1), `app/` UI & deployment (T6.3, T6.4), SVM (T5.2), slides (T7.3) | B |
+
+---
+
+## Working Rules
+
+1. **Protected `main`:** All changes are submitted through feature branches (`dev-X/<task-name>`) and reviewed pull requests.
+2. **Contracts are Frozen:** Inter-developer contracts are formally recorded in `docs/contracts.md`. Changes require full team agreement.
+3. **No Raw Data in Git:** `data/` is excluded from version control via `.gitignore`. Tests run against `tests/fixtures/sample_transactions.csv`.
+4. **Point-in-Time Features Only:** Features must never use information from after the transaction timestamp. Aggregations on user or device IDs are fit strictly on training splits.
+5. **No Raw Identifiers in Models:** `user_id`, `device_id`, `ip_address`, and `transaction_id` are never fed into models directly.

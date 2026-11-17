@@ -1,7 +1,7 @@
-@"
 name: fraud-detection
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - python=3.10
   - pandas
@@ -19,4 +19,10 @@ dependencies:
   - python-dotenv
   - kaggle
   - jupyterlab
-"@ | Set-Content environment.yml
+  - ipykernel
+  - pytest
+  - pip
+  - pip:
+    - mlflow
+    - joblib
+    - ipapi

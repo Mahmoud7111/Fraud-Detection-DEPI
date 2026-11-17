@@ -1,0 +1,33 @@
+# CODEOWNERS
+# Replace @dev-a … @dev-e with the actual GitHub usernames of your team.
+# Dev A bootstrapped the full pipeline; ownership reflects final responsibility.
+
+# Dev A — Project lead, pipeline bootstrap, data acquisition
+/src/common/                   @dev-a
+/src/collect/ip_lookup.py      @dev-a
+/src/collect/cpi_scrape.py     @dev-a
+/src/prep/                     @dev-a
+/src/features.py               @dev-a
+/src/scoring.py                @dev-a
+/src/evaluation.py             @dev-a
+/environment.yml               @dev-a
+/scripts/01_collect_ips.py     @dev-a
+/scripts/02_scrape_cpi.py      @dev-a
+/scripts/03_build_dataset.py   @dev-a
+/scripts/04_build_features.py  @dev-a
+/docs/contracts.md             @dev-a
+/docs/cleaning_log.md          @dev-a
+/docs/split_strategy.md        @dev-a
+/tests/                        @dev-a
+
+# Dev D — Modeling harness, training script, model selection
+/src/modeling/                 @dev-d
+/models/                       @dev-d
+/scripts/05_train.py           @dev-d
+
+# Dev E — Dashboard and application
+/dashboard/                    @dev-e
+/app/                          @dev-e
+
+# Shared — all devs review
+/docs/                         @dev-a @dev-b @dev-c @dev-d @dev-e
