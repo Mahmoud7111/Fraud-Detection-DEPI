@@ -17,7 +17,7 @@
   - `data/interim/cpi.csv` & `country_name_map.csv` (182 countries)
   - `data/processed/transactions_merged.csv` (151,112 rows)
   - `data/processed/features.csv` (151,112 rows × 19 point-in-time features)
-  - `tests/`: 44/44 tests passing.
+  - `tests/`: 49/49 tests passing.
 
 ---
 
@@ -52,7 +52,7 @@ To conserve context window and avoid hallucinations, do **not** read every file.
 
 3. **Point-in-Time Features Only (Zero Future Leakage):**
    - Features must only use information available at the exact second of purchase.
-   - Counts and group aggregations (e.g., `users_per_device`, `users_per_ip`) must be **fitted on the training split only** (`split == 'train'`) and mapped to validation/test sets. Never compute transform-aggregations over the full dataframe.
+   - Counts and group aggregations (e.g., `users_per_device`, `users_per_ip`) must be **point-in-time**: computed with a chronological expanding window that only sees rows at or before each transaction's `purchase_time`. Never use train-total aggregates (they leak future activity into early train rows and collapse to a constant on valid/test) and never let a row see a later row.
 
 4. **Raw Identifiers Rule:**
    - Models must **never** receive raw ID columns: `user_id`, `device_id`, `ip_address`, `ip_int`, or `transaction_id`.
@@ -73,7 +73,7 @@ To conserve context window and avoid hallucinations, do **not** read every file.
      ```bash
      pytest tests/ -v
      ```
-   - All 44 tests must pass.
+   - All 49 tests must pass.
 
 ---
 

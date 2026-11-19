@@ -101,3 +101,47 @@ class TestBuildFeatures:
         df = _make_merged_df()
         out = build_features(df)
         assert out["day_of_week"].between(0, 6).all()
+
+
+class TestPointInTimeCounts:
+    def test_counts_use_only_prior_users(self):
+        """A row must never count users who appear at a later purchase_time."""
+        from src.features import build_features
+        # device = dev_{i%3}, user = i%5, purchase_time increases with i
+        df = _make_merged_df(6)
+        out = build_features(df)
+        # i=0..2: first user on each device -> 1
+        # i=3..5: second user on dev_0/dev_1/dev_2 -> 2
+        assert out["users_per_device"].tolist() == [1, 1, 1, 2, 2, 2]
+
+    def test_counts_do_not_depend_on_split_labels(self):
+        """Counts are a function of arrival order only, not of the split column."""
+        from src.features import build_features
+        df = _make_merged_df(9)
+        as_is = build_features(df)["users_per_device"].tolist()
+
+        flipped = _make_merged_df(9)
+        flipped["split"] = "test"
+        assert build_features(flipped)["users_per_device"].tolist() == as_is
+
+    def test_unique_ip_counts_stay_at_one(self):
+        from src.features import build_features
+        df = _make_merged_df(10)   # every ip_int is distinct
+        out = build_features(df)
+        assert (out["users_per_ip"] == 1).all()
+
+
+class TestCategoryGuard:
+    def test_unknown_source_raises(self):
+        from src.features import build_features
+        df = _make_merged_df(3)
+        df.loc[0, "source"] = "SEO"          # wrong casing
+        with pytest.raises(ValueError, match="source"):
+            build_features(df)
+
+    def test_unknown_browser_raises(self):
+        from src.features import build_features
+        df = _make_merged_df(3)
+        df.loc[0, "browser"] = "Edge"
+        with pytest.raises(ValueError, match="browser"):
+            build_features(df)

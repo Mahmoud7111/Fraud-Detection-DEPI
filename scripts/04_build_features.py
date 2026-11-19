@@ -6,8 +6,8 @@ Owner: Dev C
 Steps:
   1. Load transactions_merged.csv (Contract C4).
   2. Assign train / valid / test splits (chronological by default).
-  3. Compute point-in-time features (shared-device and shared-IP counts
-     are fitted on train only, then applied to valid/test).
+  3. Compute point-in-time features (shared-device and shared-IP counts use a
+     chronological expanding window — each row sees only earlier rows).
   4. Save features.csv (Contract C5).
 
 Run:

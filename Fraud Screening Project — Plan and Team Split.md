@@ -183,7 +183,7 @@ The exact rule for turning the float `ip_address` into `ip_int` is written in `s
 |T3.2|Join IP results (row count checked before and after)|**A**|✅ Done — 85.8% success (129,651 / 151,112 matched)|T3.1, T2.2|`src/prep/merge.py`|
 |T3.3|Join CPI through the map; report match rates|**A**|✅ Done — 84.8% matched (128,107 / 151,112)|T3.2, T2.5|`transactions_merged.csv` (C4)|
 |T3.4|Cleaning log: every decision, reason, rows affected|**A**|✅ Done — 7 entries in `docs/cleaning_log.md`|T3.1–T3.3|`docs/cleaning_log.md`|
-|T3.5|One-command rebuild script and data tests using the fixture|**A**|✅ Done — 44/44 tests passing|T3.3|`scripts/03_build_dataset.py`, `tests/test_data.py`|
+|T3.5|One-command rebuild script and data tests using the fixture|**A**|✅ Done — 49/49 tests passing|T3.3|`scripts/03_build_dataset.py`, `tests/test_data.py`|
 
 ### Phase 4 — Exploration, features, dashboard draft (weeks 5–7)
 
@@ -192,7 +192,7 @@ The exact rule for turning the float `ip_address` into `ip_int` is written in `s
 |T4.1|EDA: class balance, signup-to-purchase gap, hour, browser, source, country, **always with counts beside rates**|**A**|🟡 Executed draft — needs final review|T3.3|`notebooks/04_eda_A.ipynb`|
 |T4.2|Feature definitions (point-in-time) and `src/features.py`|**A**|✅ Done — 19 features (temporal, demographic, IP, CPI, device/IP counts)|T1.5, T3.3, T4.1|`docs/features.md`, `src/features.py`|
 |T4.3|Split strategy memo (chronological if supported) and the saved split|**A**|✅ Done — chronological 70/15/15; fraud rate shift documented|T4.1|`docs/split_strategy.md`|
-|T4.4|Build `features.csv` and its tests|**A**|✅ Done — 151,112 rows × 19 features, 44/44 tests passing|T4.2, T4.3|`features.csv` (C5)|
+|T4.4|Build `features.csv` and its tests|**A**|✅ Done — 151,112 rows × 19 point-in-time features, 49/49 tests passing|T4.2, T4.3|`features.csv` (C5)|
 |T4.5|Historical dashboard draft, labelled "historical analysis"|E|⏸ Not started|T3.3, T4.1|`dashboard/`|
 |T4.6|Check every dashboard number against a pandas calculation|B|⏸ Not started|T4.5|Review comments / PR|
 |T4.7|Evaluation plan: metrics, top-k definition, how the threshold will be chosen|D|🟡 Draft — proposed target; confirm at G1|T4.3|`docs/evaluation_plan.md`|
@@ -265,7 +265,7 @@ T1.1 ─┬─► T1.2 ─┬─► T1.4 (instructor)
 
 ### Dev A — Project lead and pipeline bootstrap
 
-**Stage A (core project):** bootstrapped the full project — repo setup, data profiling, IP collection, CPI scraping, country mapping, cleaning, merging, feature engineering, evaluation module, and 44/44 passing tests. All pipeline data is ready. Remaining: EDA notebook (`notebooks/04_eda_A.ipynb`) and decision tree experiment (T5.2).
+**Stage A (core project):** bootstrapped the full project — repo setup, data profiling, IP collection, CPI scraping, country mapping, cleaning, merging, feature engineering, evaluation module, and 49/49 passing tests. All pipeline data is ready. Remaining: EDA notebook (`notebooks/04_eda_A.ipynb`) and decision tree experiment (T5.2).
 
 - **Mission:** keep the pipeline running end-to-end and explore patterns in the merged data.
 - **Must know:** `requests`, JSON, pandas in depth, `ipaddress` module, scikit-learn basics, pytest. For Stage B: FastAPI and Pydantic.

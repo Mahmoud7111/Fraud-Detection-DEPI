@@ -27,6 +27,8 @@ Each entry:
 | 6 | T3.2 | Left-join IP lookup on `ip_int`; rows with no match get `ip_lookup_ok = False` | Preserves all 151,112 rows; missing geo features are handled by model at inference | 21,461 rows with `ip_lookup_ok = False` (14.2%); 20,535 unique IPs failed | A — 2026-11-17 |
 | 7 | T3.3 | Left-join CPI through `country_name_map.csv`; unmatched get `cpi_matched = False` | 7 territories not in CPI (Guadeloupe, Isle of Man, Jersey, Monaco, Palau, Puerto Rico, Reunion); treated as missing | 23,005 rows with `cpi_matched = False` (15.2%) | A — 2026-11-17 |
 | 8 | T2.1 / T3.1 | Truncate `ip_address` float → int64 with `float_to_ip_int()` (canonical C2 rule) | Raw IPs are **not** whole numbers: 151,111 / 151,112 values carry fractional parts; ip-api needs an integer/dotted-quad address | 151,111 values truncated; 143,512 distinct raw floats → 143,510 distinct integers | A — 2026-11-19 (backfill of the implemented rule) |
+| 9 | T4.2 / T4.4 | Recompute `users_per_device` / `users_per_ip` as **chronological expanding counts** instead of train-total `nunique()` | Train totals let early rows see later train users (10,291 rows) and collapsed valid/test to a constant `1`, so the feature was dead at inference. Expanding counts use only rows at or before each `purchase_time` | All 151,112 rows recomputed; 13,156 train rows changed; shared-device rows in valid 17 → 1,272, in test 31 → 1,593 | A — 2026-11-19 |
+| 10 | T4.2 | Reject any `source` / `browser` / `sex` value outside the cleaned vocabulary (`validate_categories()`) | An unseen value (e.g. `"SEO"`) previously set every dummy to 0 and was silently read as the reference category | 0 rows affected (all values valid); raises on future bad input | A — 2026-11-19 |
 
 ---
 

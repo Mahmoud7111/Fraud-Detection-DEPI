@@ -230,8 +230,8 @@ This is the **Contract C4** file. Its row count must equal the cleaned row count
 | `is_hosting` | From ip-api | Datacenter IPs are suspicious for retail orders |
 | `cpi_score` | Country's CPI from Wikipedia | High-corruption countries have more fraud |
 | `cpi_matched` | 1 if CPI was found | Quality flag |
-| `users_per_device` | Distinct users on same device (train only) | >1 = device is shared/resold |
-| `users_per_ip` | Distinct users on same IP (train only) | High count = suspicious origin |
+| `users_per_device` | Distinct users seen on same device up to this order (point-in-time) | >1 = device is shared/resold |
+| `users_per_ip` | Distinct users seen on same IP up to this order (point-in-time) | High count = suspicious origin |
 
 3. **Saves** `data/processed/features.csv` with columns: `transaction_id, class, split, [19 features]`
 
