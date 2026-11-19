@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import logging
 import pandas as pd
-from src.config import TRANSACTIONS_MERGED, FEATURES_CSV, RANDOM_SEED
+from src.config import TRANSACTIONS_MERGED, FEATURES_CSV
 from src.features import build_features, save_features
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -35,7 +35,7 @@ VALID_FRAC = 0.15
 
 def assign_split(df: pd.DataFrame) -> pd.DataFrame:
     """Assign 'train'/'valid'/'test' by chronological purchase_time order."""
-    df = df.sort_values("purchase_time").reset_index(drop=True)
+    df = df.sort_values(["purchase_time", "transaction_id"]).reset_index(drop=True)
     n = len(df)
     train_end = int(n * TRAIN_FRAC)
     valid_end = train_end + int(n * VALID_FRAC)
@@ -54,7 +54,7 @@ def assign_split(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    df = pd.read_csv(TRANSACTIONS_MERGED, parse_dates=["signup_time", "purchase_time"])
+    df = pd.read_csv(TRANSACTIONS_MERGED, parse_dates=["signup_time", "purchase_time"], utc=True)
     df = assign_split(df)
 
     features = build_features(df)

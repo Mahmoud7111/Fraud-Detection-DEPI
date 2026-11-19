@@ -17,7 +17,7 @@
   - `data/interim/cpi.csv` & `country_name_map.csv` (182 countries)
   - `data/processed/transactions_merged.csv` (151,112 rows)
   - `data/processed/features.csv` (151,112 rows × 19 point-in-time features)
-  - `tests/`: 49/49 tests passing.
+  - `tests/`: 61/61 tests passing.
 
 ---
 
@@ -73,7 +73,7 @@ To conserve context window and avoid hallucinations, do **not** read every file.
      ```bash
      pytest tests/ -v
      ```
-   - All 49 tests must pass.
+   - All 61 tests must pass.
 
 ---
 
@@ -82,7 +82,7 @@ To conserve context window and avoid hallucinations, do **not** read every file.
 Identify which developer the user is before generating code:
 
 * **Dev A (Project Lead):**
-  - *Remaining:* EDA notebook (`notebooks/04_eda_A.ipynb`), Decision Tree experiment (`src/modeling/experiments/decision_tree.py`).
+  - *Remaining:* Decision Tree experiment (`src/modeling/experiments/decision_tree.py` after Gate G1). EDA notebook (`notebooks/04_eda_A.ipynb`) is completed.
 * **Dev B (Country Risk & Reviewer):**
   - *Remaining:* T2.3 Static IP comparison write-up, T4.6 Dashboard numeric review, T5.2 KNN experiment, T5.3 Lead IP and CPI ablations.
 * **Dev C (Integration, Features & Scoring):**

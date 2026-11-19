@@ -45,10 +45,10 @@ Raw data ─► IP country lookup (A ✅) ─┐
 - ✅ T2.4–T2.6 — CPI scrape + country map + data sources doc
 - ✅ T3.1–T3.5 — Cleaned, merged, rebuilt dataset (0 rows dropped), cleaning log
 - ✅ T4.2–T4.4 — 19 point-in-time features, chronological split, `features.csv`
-- ✅ T4.8 — `src/evaluation.py` and 49/49 tests passing
+- ✅ T4.8 — `src/evaluation.py` and 61/61 tests passing
 
 **Still to do (A only):**
-- 🟡 T4.1 — EDA notebook: `notebooks/04_eda_A.ipynb` (executed draft — needs final review)
+- ✅ T4.1 — EDA notebook: `notebooks/04_eda_A.ipynb` (completed with anomaly & cohort diagnostics)
 - ⏸ T5.2 — Decision tree experiment (after gate G1)
 
 ---

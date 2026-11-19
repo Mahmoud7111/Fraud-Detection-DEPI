@@ -2,7 +2,7 @@
 
 An end-to-end DEPI Data Science capstone project for detecting potentially fraudulent e-commerce purchases at the moment of order placement. The project combines transaction data, IP geolocation, country risk data, exploratory analysis, machine learning pipelines, a visual dashboard, and a deployable application.
 
-> **Project status:** In progress — Phases 1–4 pipeline complete through `features.csv` (19 point-in-time features, 49/49 tests passing). Modeling (Phase 5) is gated on G1; dashboard and app not started. See deliverables table below.
+> **Project status:** In progress — Phases 1–4 pipeline complete through `features.csv` (19 point-in-time features, 61/61 tests passing). Modeling (Phase 5) is gated on G1; dashboard and app not started. See deliverables table below.
 
 ---
 
@@ -122,7 +122,7 @@ python scripts/02_scrape_cpi.py            # ✅ done — 182 countries, 94.7% m
 python scripts/03_build_dataset.py         # ✅ done — 151,112 rows, 84.8% CPI matched
 
 # 4. Generate point-in-time features with chronological train/valid/test split
-python scripts/04_build_features.py        # ✅ done — 151,112 rows × 19 features; 49/49 tests passing
+python scripts/04_build_features.py        # ✅ done — 151,112 rows × 19 features; 61/61 tests passing
 
 # 5. Train all model families, track runs in MLflow, and evaluate on validation data
 python scripts/05_train.py                 # ⏸ after gate G1
@@ -174,7 +174,7 @@ python scripts/05_train.py                 # ⏸ after gate G1
 | T4.1 | EDA notebook | **A** | 🟡 Executed draft — 11/11 code cells run; needs final review |
 | T4.2 | Feature definitions + `src/features.py` | **A** | ✅ Done — 19 features (temporal, demographic, IP, CPI, device/IP counts) |
 | T4.3 | Split strategy memo | **A** | ✅ Done — chronological 70/15/15; fraud rate shift documented |
-| T4.4 | Build `features.csv` and tests | **A** | ✅ Done — 151,112 rows × 19 features, 49/49 tests passing |
+| T4.4 | Build `features.csv` and tests | **A** | ✅ Done — 151,112 rows × 19 features, 61/61 tests passing |
 | T4.5 | Historical dashboard draft | E | ⏸ Not started |
 | T4.6 | Check dashboard numbers | B | ⏸ Not started |
 | T4.7 | Evaluation plan | D | 🟡 Draft — proposed target; confirm at G1 |

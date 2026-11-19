@@ -6,7 +6,6 @@ Run:
     pytest tests/test_features.py
 """
 import pandas as pd
-import numpy as np
 import pytest
 
 RAW_ID_COLS = {"user_id", "device_id", "ip_address", "ip_int"}

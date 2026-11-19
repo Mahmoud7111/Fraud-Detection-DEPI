@@ -9,7 +9,7 @@ Every decision made here must be recorded in docs/cleaning_log.md.
 """
 import logging
 import pandas as pd
-from src.config import TRANSACTIONS_CLEAN, RANDOM_SEED
+from src.config import TRANSACTIONS_CLEAN
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +42,16 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     df["signup_time"]   = pd.to_datetime(df["signup_time"],   utc=True, errors="coerce")
     df["purchase_time"] = pd.to_datetime(df["purchase_time"], utc=True, errors="coerce")
 
-    # 2. Remove purchases before signup
-    invalid_time = df["purchase_time"] < df["signup_time"]
+    # 2. Remove purchases before signup (also drop rows where either timestamp is NaT,
+    #    because NaT < NaT evaluates to False and those rows would silently survive).
+    invalid_time = (
+        (df["purchase_time"] < df["signup_time"])
+        | df["purchase_time"].isna()
+        | df["signup_time"].isna()
+    )
     n_invalid = invalid_time.sum()
     if n_invalid:
-        logger.warning("Dropping %d rows where purchase_time < signup_time.", n_invalid)
+        logger.warning("Dropping %d rows where purchase_time < signup_time (or NaT).", n_invalid)
         df = df[~invalid_time].copy()
 
     # 3. Clip age

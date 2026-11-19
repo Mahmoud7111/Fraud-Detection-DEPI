@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import logging
 import pandas as pd
 from src.collect.cpi_scrape import scrape_cpi
-from src.config import CPI_CSV, COUNTRY_MAP_CSV, IP_LOOKUP_CSV
+from src.config import COUNTRY_MAP_CSV, IP_LOOKUP_CSV
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
