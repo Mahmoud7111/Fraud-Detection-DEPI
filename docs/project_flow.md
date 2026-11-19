@@ -1,5 +1,6 @@
 # Project Flow — How Everything Works
 
+_Owner: Dev A (Project Lead). Architecture and end-to-end flow guide._
 _A complete walkthrough of the fraud screening pipeline: what every file does, how data moves between steps, and what each person is responsible for._
 
 ---

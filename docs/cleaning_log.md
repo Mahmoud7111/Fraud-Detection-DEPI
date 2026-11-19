@@ -1,6 +1,6 @@
 # Cleaning Log
 
-_Owner: Dev C. Every cleaning decision must be recorded here (Task T3.4).
+_Owner: Dev A (bootstrapped Task T3.4; maintained by Dev C). Every cleaning decision must be recorded here.
 Devs A and B add entries for their sources via PR._
 
 ---

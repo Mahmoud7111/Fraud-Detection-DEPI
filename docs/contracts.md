@@ -1,6 +1,7 @@
 # Contracts
 
-_Version: 0.1 — in force for implementation (Phases 2–4 were built against it). Formal sign-off by all five is still required before **Gate G1** (T1.3)._
+_Owner: Dev A (driven by A for Task T1.3; formal sign-off by all five developers required before Gate G1)._
+_Version: 0.1 — in force for implementation (Phases 2–4 were built against it)._
 
 ---
 

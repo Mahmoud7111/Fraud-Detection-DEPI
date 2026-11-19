@@ -1,6 +1,6 @@
 # Feature Definitions
 
-_Owner: Dev C. Single source of truth for the feature set (Task T4.2).
+_Owner: Dev A (bootstrapped Task T4.2; maintained by Dev C). Single source of truth for the feature set.
 Update this file in the same PR as any change to `src/features.py`._
 
 > **Point-in-time rule:** every feature must use only information available
