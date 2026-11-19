@@ -25,7 +25,7 @@ Raw data ─► IP country lookup (A ✅) ─┐
 
 | File | Status | Used by |
 |---|---|---|
-| `data/interim/ip_lookup.csv` | ✅ Ready (143,510 IPs, 85.8% success) | — |
+| `data/interim/ip_lookup.csv` | ✅ Ready (143,510 unique IPs; 122,975 resolved = 85.7%; 129,651 rows with country = 85.8%) | — |
 | `data/interim/cpi.csv` + `country_name_map.csv` | ✅ Ready (182 countries, 94.7% matched) | — |
 | `data/processed/transactions_merged.csv` | ✅ Ready (151,112 rows) | D, E |
 | `data/processed/features.csv` | ✅ Ready (151,112 rows × 19 features) | D |
@@ -39,16 +39,16 @@ Raw data ─► IP country lookup (A ✅) ─┐
 
 **Already done:**
 - ✅ T1.1 — Repo, CI, environment, PR template, CODEOWNERS
-- ✅ T1.2 — Data profile (151,112 rows, 9.36% fraud, 143,510 unique IPs, dates 2015-03 to 2015-09)
+- ✅ T1.2 — Data profile (151,112 rows, 9.36% fraud, 143,510 unique IPs, dates 2015-01 to 2015-12)
 - ✅ T1.6 — Shared utilities (`load_raw()`, IP conversion, `config.py`)
-- ✅ T2.1–T2.2 — IP collection (85.8% success, 736 proxy, 13,207 hosting IPs)
+- ✅ T2.1–T2.2 — IP collection (122,975/143,510 unique IPs resolved = 85.7%; 129,651 rows with country = 85.8%; 736 proxy, 13,207 hosting IPs)
 - ✅ T2.4–T2.6 — CPI scrape + country map + data sources doc
 - ✅ T3.1–T3.5 — Cleaned, merged, rebuilt dataset (0 rows dropped), cleaning log
 - ✅ T4.2–T4.4 — 19 point-in-time features, chronological split, `features.csv`
 - ✅ T4.8 — `src/evaluation.py` and 44/44 tests passing
 
 **Still to do (A only):**
-- ⏸ T4.1 — EDA notebook: `notebooks/04_eda_A.ipynb` (already scaffolded — just run it)
+- 🟡 T4.1 — EDA notebook: `notebooks/04_eda_A.ipynb` (executed draft — needs final review)
 - ⏸ T5.2 — Decision tree experiment (after gate G1)
 
 ---

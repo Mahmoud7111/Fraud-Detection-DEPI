@@ -4,6 +4,8 @@ _Owner: Dev D (Tasks T1.4, T6.2)._
 
 > Send questions from Section 12 of the master plan with the real data profile
 > (from T1.2). Record answers here as soon as they are received.
+>
+> **Status:** not sent as of 2026-11-19 (T1.4 open).
 
 ---
 
@@ -33,11 +35,11 @@ _(Paste the key numbers from `notebooks/01_profile_A.ipynb` here before sending.
 
 | Metric | Value |
 |---|---|
-| Total rows | — |
-| Total columns | — |
-| Fraud rate | — |
-| Date range | — |
-| Missing values | — |
-| Unique IPs | — |
-| Devices shared by >1 user | — |
-| IP address type | float (no fractional parts confirmed: ___) |
+| Total rows | 151,112 |
+| Total columns | 11 |
+| Fraud rate | 9.36% (14,151 fraud / 136,961 legitimate) |
+| Date range | 2015-01-01 → 2015-12-16 |
+| Missing values | 0 (and 0 exact duplicates) |
+| Unique IPs | 143,510 after canonical truncation (143,512 distinct raw float values) |
+| Devices shared by >1 user | 6,175 (max 20 users on one device) |
+| IP address type | float **with fractional parts** — 151,111 / 151,112 rows; truncated to int64 by `src/common/ips.py` (C2) |

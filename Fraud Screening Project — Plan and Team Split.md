@@ -35,10 +35,11 @@ _DEPI Data Science final project. Working draft for the five developers. This fi
 |D1|SQL in the data science part|**Decided: no.** pandas + NumPy only|Done|
 |D2|Is the website (with accounts) acceptable as the deployed application, and is a simpler app enough?|**Open.** Ask the instructor|Phase 1 (T1.4)|
 |D3|Website stack|**Open.** Suggested default: FastAPI backend + React frontend + SQLAlchemy (SQLite in development, PostgreSQL when deployed). Alternatives: Streamlit (no real accounts), MongoDB instead of SQL|Start of Stage B (W1)|
-|D4|Train/test split|**Open.** Chronological preferred if the dates and fraud counts support it|After EDA (T4.3)|
+|D4|Train/test split|**Decided:** chronological 70/15/15 (see `docs/split_strategy.md`)|Done — 2026-11-17|
 |D5|Do IP and CPI features go into the final model?|**Open.** Decided by comparing runs with and without them (T5.3). The data sources stay in the project either way|Phase 5|
 |D6|Live IP lookup when scoring new orders|**Open.** Depends on whether real merchant exports contain an IP column (T1.5)|Phase 4|
 |D7|Modeling gate date (when Course 9 is taught)|**Open.** Fill in: ____|As soon as the schedule is known|
+|D8|Review threshold and target precision|**Open.** Proposed: precision ≥ 0.50 at highest recall, else max F1|Gate G1 / T5.4|
 
 ---
 
@@ -97,10 +98,12 @@ fraud-detection/
 
 |Path|Owner|Reviewer|
 |---|---|---|
-|`environment.yml`, `.gitignore`, `.github/`, `README.md`, `src/config.py`, `docs/contracts.md`, `docs/instructor_answers.md`|**A** (bootstrapped)|one other dev|
+|`environment.yml`, `.gitignore`, `.github/`, `src/config.py`, `docs/contracts.md`|**A**|one other dev|
+|`README.md`|**A** bootstrapped; final update by **D** (T7.1)|one other dev|
+|`docs/instructor_answers.md`|**D** (T1.4)|A|
 |`src/common/io.py`, `src/common/ips.py`, `src/collect/ip_lookup.py`, `scripts/01_collect_ips.py`, `docs/data_sources.md` (IP section), `tests/test_collect_ip.py`|**A**|C|
 |`src/collect/cpi_scrape.py`, `scripts/02_scrape_cpi.py`, `data/interim/country_name_map.csv`, `docs/data_sources.md` (CPI section), `tests/test_cpi.py`|**A** (bootstrapped — B reviews)|C|
-|`src/prep/`, `scripts/03_build_dataset.py`, `scripts/04_build_features.py`, `src/features.py`, `src/scoring.py`, `docs/cleaning_log.md`, `docs/features.md`, `docs/split_strategy.md`, `docs/feature_availability.md`, `tests/test_data.py`, `tests/test_features.py`, `tests/test_scoring.py`, `tests/fixtures/`|**A** (bootstrapped — C maintains)|D|
+|`src/prep/`, `scripts/03_build_dataset.py`, `scripts/04_build_features.py`, `src/features.py`, `src/scoring.py`, `docs/cleaning_log.md`, `docs/features.md`, `docs/split_strategy.md`, `docs/feature_availability.md` (T1.5 — C + E), `tests/test_data.py`, `tests/test_features.py`, `tests/test_scoring.py`, `tests/fixtures/`|**A** (bootstrapped — C maintains)|D|
 |`src/evaluation.py`, `src/modeling/`, `scripts/05_train.py`, `models/`, `docs/evaluation_plan.md`, `docs/model_card.md`, `tests/test_evaluation.py`|**A** (evaluation bootstrapped) + **D** (modeling)|E|
 |`dashboard/`, `app/` (Stage A), frontend (Stage B)|**E**|B|
 |`app/backend/` upload and validation parts (Stage B)|A|C|
@@ -137,12 +140,12 @@ The exact rule for turning the float `ip_address` into `ip_int` is written in `s
 **C6. Model package.**
 
 - `models/fraud_pipeline.joblib`: a scikit-learn `Pipeline` whose `predict_proba` takes a DataFrame with the columns in `input_spec.json`.
-- `models/input_spec.json`: required and optional raw order fields with their types.
+- `models/input_spec.json`: required and optional model input fields with their types (**contract target:** raw order fields; current implementation writes the engineered feature names — see the C7 note in `docs/contracts.md`).
 - `models/threshold.json`: the review threshold, chosen on validation data, with its date.
 
 **C7. Scoring.** In `src/scoring.py`: `score_orders(orders: pd.DataFrame) -> pd.DataFrame` returning `order_ref, risk_score (0–1), rank, review_flag (bool), error`. A row that cannot be scored gets an `error` message, and it is never dropped.
 
-**C8. Evaluation.** In `src/evaluation.py`: `evaluate(y_true, y_score, threshold=None, k_values=(10, 50, 100)) -> dict` with `precision, recall, f1, pr_auc, roc_auc, confusion (tn, fp, fn, tp), flagged_share, frauds_in_top_k`.
+**C8. Evaluation.** In `src/evaluation.py`: `evaluate(y_true, y_score, threshold=None, k_values=(10, 50, 100)) -> dict` with `precision, recall, f1, pr_auc, roc_auc, confusion (tn, fp, fn, tp), flagged_share, frauds_in_top_k, threshold`.
 
 ---
 
@@ -166,7 +169,7 @@ The exact rule for turning the float `ip_address` into `ip_int` is written in `s
 |ID|Task|Owner|Status|Depends on|Output|
 |---|---|---|---|---|---|
 |T2.1|Validate IPs, dedupe, write the list of unique valid IPs|**A**|✅ Done — 143,510 unique IPs|T1.2, T1.6|`data/interim/unique_ips.csv`|
-|T2.2|Resumable IP collector: batches of 100, at most 15 batch requests per minute, each completed batch saved, failures logged|**A**|✅ Done — 129,651 successes (85.8%), 736 proxy, 13,207 hosting|T2.1|`src/collect/ip_lookup.py`, `ip_lookup.csv` (C2)|
+|T2.2|Resumable IP collector: batches of 100, at most 15 batch requests per minute, each completed batch saved, failures logged|**A**|✅ Done — 122,975/143,510 unique IPs resolved (85.7%); 129,651 rows with country (85.8%); 736 proxy, 13,207 hosting IPs|T2.1|`src/collect/ip_lookup.py`, `ip_lookup.csv` (C2)|
 |T2.3|If the static IP-country file exists, compare it with the API on a sample and report the match rate|**B**|⏸ Not started|T2.2 (partial results are enough)|Section in `docs/data_sources.md`|
 |T2.4|Scrape the Wikipedia CPI table, keep the raw HTML, choose the year nearest the purchase dates|**A**|✅ Done — 182 countries, year 2026|T1.1|`cpi.csv` (C3)|
 |T2.5|Country-name map and match-rate report|**A**|✅ Done — 94.7% coverage (126/133)|T2.4, and the first batches of T2.2|`country_name_map.csv`|
@@ -186,13 +189,13 @@ The exact rule for turning the float `ip_address` into `ip_int` is written in `s
 
 |ID|Task|Owner|Status|Depends on|Output|
 |---|---|---|---|---|---|
-|T4.1|EDA: class balance, signup-to-purchase gap, hour, browser, source, country, **always with counts beside rates**|**A**|⏸ Not started|T3.3|`notebooks/04_eda_A.ipynb`|
+|T4.1|EDA: class balance, signup-to-purchase gap, hour, browser, source, country, **always with counts beside rates**|**A**|🟡 Executed draft — needs final review|T3.3|`notebooks/04_eda_A.ipynb`|
 |T4.2|Feature definitions (point-in-time) and `src/features.py`|**A**|✅ Done — 19 features (temporal, demographic, IP, CPI, device/IP counts)|T1.5, T3.3, T4.1|`docs/features.md`, `src/features.py`|
 |T4.3|Split strategy memo (chronological if supported) and the saved split|**A**|✅ Done — chronological 70/15/15; fraud rate shift documented|T4.1|`docs/split_strategy.md`|
 |T4.4|Build `features.csv` and its tests|**A**|✅ Done — 151,112 rows × 19 features, 44/44 tests passing|T4.2, T4.3|`features.csv` (C5)|
 |T4.5|Historical dashboard draft, labelled "historical analysis"|E|⏸ Not started|T3.3, T4.1|`dashboard/`|
 |T4.6|Check every dashboard number against a pandas calculation|B|⏸ Not started|T4.5|Review comments / PR|
-|T4.7|Evaluation plan: metrics, top-k definition, how the threshold will be chosen|D|⏸ Template ready|T4.3|`docs/evaluation_plan.md`|
+|T4.7|Evaluation plan: metrics, top-k definition, how the threshold will be chosen|D|🟡 Draft — proposed target; confirm at G1|T4.3|`docs/evaluation_plan.md`|
 |T4.8|`src/evaluation.py` and tests on dummy scores|**A**|✅ Done — 8 evaluation tests passing|T4.7|C8|
 
 ### Modeling gate — G1
@@ -268,7 +271,7 @@ T1.1 ─┬─► T1.2 ─┬─► T1.4 (instructor)
 - **Must know:** `requests`, JSON, pandas in depth, `ipaddress` module, scikit-learn basics, pytest. For Stage B: FastAPI and Pydantic.
 - **Files:** `notebooks/01_profile_A.ipynb`, `notebooks/04_eda_A.ipynb`, `src/modeling/experiments/decision_tree.py`.
 - **Tasks done:** T1.1, T1.2, T1.6, T2.1, T2.2, T2.4, T2.5, T2.6, T3.1–T3.5, T4.2–T4.4, T4.8.
-- **Tasks remaining:** T4.1 (EDA notebook: `notebooks/04_eda_A.ipynb`), T5.2 (decision tree).
+- **Tasks remaining:** T4.1 (final review of the executed `notebooks/04_eda_A.ipynb` draft), T5.2 (decision tree).
 - **Gets from:** nothing — all data files and pipeline stages are already built. **Hands to:** team.
 - **Done when:** EDA notebook completed and decision tree run logged in MLflow.
 

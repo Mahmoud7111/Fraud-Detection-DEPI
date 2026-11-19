@@ -1,6 +1,6 @@
 # Split Strategy
 
-_Owners: Dev C and Dev D (Task T4.3)._
+_Owner: Dev A (Task T4.3); reviewed by Dev D._
 
 ---
 
@@ -18,7 +18,7 @@ _Owners: Dev C and Dev D (Task T4.3)._
 
 ## Checks
 
-- [x] `purchase_time` range: **2015-03-28 to 2015-09-19** (≈ 6 months).
+- [x] `purchase_time` range: **2015-01-01 to 2015-12-16** (≈ 11.5 months).
 - [x] Class balance checked per split (see table below).
 - [x] Fraud rate deviation noted and documented (see ⚠️ note).
 
@@ -49,5 +49,5 @@ _Owners: Dev C and Dev D (Task T4.3)._
 | Fraud rate (valid) | 4.59% |
 | Fraud rate (test) | 4.56% |
 | Random seed | 42 (from `src/config.py`) |
-| Decided by | Dev D |
+| Decided by | Dev A (bootstrap); reviewed by Dev D |
 | Date | 2026-11-17 |

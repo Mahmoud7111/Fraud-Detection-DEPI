@@ -19,13 +19,14 @@ Each entry:
 
 | # | Phase | Decision | Reason | Rows affected | Added by |
 |---|---|---|---|---|---|
-| 1 | T3.1 | Parse `signup_time` / `purchase_time` as UTC datetimes | Enables time-delta features; required for validity check below | 0 changed | D — 2026-11-17 |
-| 2 | T3.1 | Drop rows where `purchase_time < signup_time` | Impossible event sequence — data error | **0 dropped** (none found) | D — 2026-11-17 |
-| 3 | T3.1 | Clip `age` to [18, 100] | Ages outside this range are implausible and likely entry errors | 0 rows clipped (all in range) | D — 2026-11-17 |
-| 4 | T3.1 | Standardise `browser` / `source` to Title Case; `sex` to UPPER | Prevents spurious category splits from mixed casing | 0 rows removed | D — 2026-11-17 |
-| 5 | T3.1 | Drop exact duplicates (`user_id` + `purchase_time` + `purchase_value`) | Same user buying the exact same amount at the exact same second is a data artefact | **0 dropped** (none found) | D — 2026-11-17 |
-| 6 | T3.2 | Left-join IP lookup on `ip_int`; rows with no match get `ip_lookup_ok = False` | Preserves all 151,112 rows; missing geo features are handled by model at inference | 20,535 rows with `ip_lookup_ok = False` (14.2%) | D — 2026-11-17 |
-| 7 | T3.3 | Left-join CPI through `country_name_map.csv`; unmatched get `cpi_matched = False` | 7 territories not in CPI (Guadeloupe, Isle of Man, Jersey, Monaco, Palau, Puerto Rico, Reunion); treated as missing | 23,005 rows with `cpi_matched = False` (15.2%) | D — 2026-11-17 |
+| 1 | T3.1 | Parse `signup_time` / `purchase_time` as UTC datetimes | Enables time-delta features; required for validity check below | 0 changed | A — 2026-11-17 |
+| 2 | T3.1 | Drop rows where `purchase_time < signup_time` | Impossible event sequence — data error | **0 dropped** (none found) | A — 2026-11-17 |
+| 3 | T3.1 | Clip `age` to [18, 100] | Ages outside this range are implausible and likely entry errors | 0 rows clipped (all in range) | A — 2026-11-17 |
+| 4 | T3.1 | Standardise `browser` / `source` to Title Case; `sex` to UPPER | Prevents spurious category splits from mixed casing | 0 rows removed | A — 2026-11-17 |
+| 5 | T3.1 | Drop exact duplicates (`user_id` + `purchase_time` + `purchase_value`) | Same user buying the exact same amount at the exact same second is a data artefact | **0 dropped** (none found) | A — 2026-11-17 |
+| 6 | T3.2 | Left-join IP lookup on `ip_int`; rows with no match get `ip_lookup_ok = False` | Preserves all 151,112 rows; missing geo features are handled by model at inference | 21,461 rows with `ip_lookup_ok = False` (14.2%); 20,535 unique IPs failed | A — 2026-11-17 |
+| 7 | T3.3 | Left-join CPI through `country_name_map.csv`; unmatched get `cpi_matched = False` | 7 territories not in CPI (Guadeloupe, Isle of Man, Jersey, Monaco, Palau, Puerto Rico, Reunion); treated as missing | 23,005 rows with `cpi_matched = False` (15.2%) | A — 2026-11-17 |
+| 8 | T2.1 / T3.1 | Truncate `ip_address` float → int64 with `float_to_ip_int()` (canonical C2 rule) | Raw IPs are **not** whole numbers: 151,111 / 151,112 values carry fractional parts; ip-api needs an integer/dotted-quad address | 151,111 values truncated; 143,512 distinct raw floats → 143,510 distinct integers | A — 2026-11-19 (backfill of the implemented rule) |
 
 ---
 

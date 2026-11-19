@@ -1,6 +1,6 @@
 # Contracts
 
-_Version: 0.1 — draft. All five developers must sign off on this file before Phase 2 starts (T1.3)._
+_Version: 0.1 — in force for implementation (Phases 2–4 were built against it). Formal sign-off by all five is still required before **Gate G1** (T1.3)._
 
 ---
 
@@ -62,7 +62,7 @@ _Version: 0.1 — draft. All five developers must sign off on this file before P
 | File | Contents |
 |---|---|
 | `models/fraud_pipeline.joblib` | scikit-learn `Pipeline` whose `predict_proba` accepts a DataFrame with the columns in `input_spec.json` |
-| `models/input_spec.json` | Required/optional raw order fields with their types |
+| `models/input_spec.json` | Required/optional model input fields with their types. **Contract target:** raw order fields; the current implementation writes the 19 engineered feature names (see the C7 note). |
 | `models/threshold.json` | The review threshold, chosen on **validation** data, with its date |
 
 ---
@@ -73,6 +73,8 @@ _Version: 0.1 — draft. All five developers must sign off on this file before P
 **Function:** `score_orders(orders: pd.DataFrame) -> pd.DataFrame`  
 **Output columns:** `order_ref, risk_score (0–1), rank, review_flag (bool), error`  
 **Rule:** a row that cannot be scored gets an error message and is never dropped.
+
+> **Implementation note (open):** the current `score_orders()` expects the already-engineered feature columns listed in `models/input_spec.json`. Building those features from raw order fields is still pending (T5.7). This is the parity risk tracked in `tests/test_scoring.py`.
 
 ---
 

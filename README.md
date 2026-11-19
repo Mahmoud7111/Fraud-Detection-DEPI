@@ -2,7 +2,7 @@
 
 An end-to-end DEPI Data Science capstone project for detecting potentially fraudulent e-commerce purchases at the moment of order placement. The project combines transaction data, IP geolocation, country risk data, exploratory analysis, machine learning pipelines, a visual dashboard, and a deployable application.
 
-> **Project status:** In progress — Phases 1–3 complete. `transactions_merged.csv` ready. See deliverables table below.
+> **Project status:** In progress — Phases 1–4 pipeline complete through `features.csv` (19 features, 44/44 tests passing). Modeling (Phase 5) is gated on G1; dashboard and app not started. See deliverables table below.
 
 ---
 
@@ -113,7 +113,7 @@ The data pipeline and modeling run sequentially via the scripts:
 
 ```bash
 # 1. Collect IP geolocation data from API (resumable)
-python scripts/01_collect_ips.py           # ✅ done — 143,510 IPs, 85.7% success
+python scripts/01_collect_ips.py           # ✅ done — 143,510 unique IPs, 85.7% resolved
 
 # 2. Scrape and map country CPI scores
 python scripts/02_scrape_cpi.py            # ✅ done — 182 countries, 94.7% matched
@@ -122,7 +122,7 @@ python scripts/02_scrape_cpi.py            # ✅ done — 182 countries, 94.7% m
 python scripts/03_build_dataset.py         # ✅ done — 151,112 rows, 84.8% CPI matched
 
 # 4. Generate point-in-time features with chronological train/valid/test split
-python scripts/04_build_features.py        # ⏸ next
+python scripts/04_build_features.py        # ✅ done — 151,112 rows × 19 features; 44/44 tests passing
 
 # 5. Train all model families, track runs in MLflow, and evaluate on validation data
 python scripts/05_train.py                 # ⏸ after gate G1
@@ -151,7 +151,7 @@ python scripts/05_train.py                 # ⏸ after gate G1
 | Task | Description | Owner | Status |
 |---|---|---|---|
 | T2.1 | Validate IPs, deduplicate → `unique_ips.csv` | **A** | ✅ Done — 143,510 unique IPs |
-| T2.2 | Resumable IP collector → `ip_lookup.csv` | **A** | ✅ Done — 129,651 successes (85.8%), 736 proxy, 13,207 hosting |
+| T2.2 | Resumable IP collector → `ip_lookup.csv` | **A** | ✅ Done — 122,975/143,510 unique IPs resolved (85.7%); 129,651 rows with country (85.8%); 736 proxy, 13,207 hosting IPs |
 | T2.3 | Compare static IP-country file vs API on a sample | **B** | ⏸ Not started |
 | T2.4 | Scrape Wikipedia CPI table → `cpi.csv` | **A** | ✅ Done — 182 countries |
 | T2.5 | Country-name map + match-rate report | **A** | ✅ Done — 94.7% coverage (126/133) |
@@ -171,13 +171,13 @@ python scripts/05_train.py                 # ⏸ after gate G1
 
 | Task | Description | Owner | Status |
 |---|---|---|---|
-| T4.1 | EDA notebook | **A** | ⏸ Not started |
+| T4.1 | EDA notebook | **A** | 🟡 Executed draft — 11/11 code cells run; needs final review |
 | T4.2 | Feature definitions + `src/features.py` | **A** | ✅ Done — 19 features (temporal, demographic, IP, CPI, device/IP counts) |
 | T4.3 | Split strategy memo | **A** | ✅ Done — chronological 70/15/15; fraud rate shift documented |
 | T4.4 | Build `features.csv` and tests | **A** | ✅ Done — 151,112 rows × 19 features, 44/44 tests passing |
 | T4.5 | Historical dashboard draft | E | ⏸ Not started |
 | T4.6 | Check dashboard numbers | B | ⏸ Not started |
-| T4.7 | Evaluation plan | D | ⏸ Template ready |
+| T4.7 | Evaluation plan | D | 🟡 Draft — proposed target; confirm at G1 |
 | T4.8 | `src/evaluation.py` and tests | **A** | ✅ Done — 8 evaluation tests passing |
 
 ### Phase 5 — Modeling (after Gate G1)
@@ -209,7 +209,7 @@ pytest tests/ -v
 
 | Dev | Core Responsibility (Stage A) | Files Owned | PR Reviewer |
 |---|---|---|---|
-| **A** (you) | Project lead & full pipeline bootstrap | everything bootstrapped + `notebooks/04_eda_A.ipynb` (T4.1) & decision tree (T5.2) | C |
+| **A** | Project lead & full pipeline bootstrap | everything bootstrapped + `notebooks/04_eda_A.ipynb` (T4.1) & decision tree (T5.2) | C |
 | **B** | Country data comparison, dashboard review & ablation lead | `docs/data_sources.md` (T2.3), `dashboard/` checks (T4.6), KNN & ablations (T5.2, T5.3) | C |
 | **C** | Feature maintainer, live scoring, RF/GBM & app validation | `src/scoring.py` (T5.7–T5.8), `app/` validation (T6.3), RF/GBM (T5.2), feasibility (T1.5) | D |
 | **D** | Evaluation plan, training harness, model selection & instructor comms | `docs/instructor_answers.md` (T1.4), `docs/evaluation_plan.md` (T4.7), `src/modeling/` (T5.1), logreg (T5.2), `models/` (T5.4–T5.6) | E |

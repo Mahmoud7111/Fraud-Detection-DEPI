@@ -1,8 +1,8 @@
-# ── Data (never committed; rebuild from scripts) ──────────────────────────────
-data/
-# Allow the committed raw files and test fixture
-!data/raw/Fraud_Data.csv
-!data/raw/IpAddress_to_Country.csv
+# ── Data (raw data committed; interim & processed rebuilt from scripts) ────────
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/

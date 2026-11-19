@@ -25,12 +25,11 @@ Accuracy is **not** a primary metric (misleading with class imbalance).
 
 ---
 
-## Threshold selection (Decision D4)
+## Threshold selection (Decision D8)
 
 - Threshold is chosen on **validation data only**. The test set is not seen until T5.5.
 - Plot the precision-recall curve on validation data.
-- Choose the threshold that achieves a target precision ≥ 0.X at the highest recall, OR
-  the threshold that maximises F1 — whichever the team and instructor agree on.
+- Proposed default: choose the threshold that achieves **precision ≥ 0.50** at the highest recall, OR the threshold that maximises F1 — confirm with the instructor/team at Gate G1. If the merchant states a review-capacity budget, derive the threshold from the top-k budget instead.
 - Document the chosen target and rationale in `docs/model_card.md`.
 
 ---

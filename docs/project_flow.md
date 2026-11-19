@@ -53,7 +53,7 @@ data/interim/ip_lookup.csv                             data/interim/cpi.csv
                                 │
                         ┌───────┴────────────────────────┐
                         ▼                                ▼
-              [05_train.py]                      [notebooks/04_eda_D.ipynb]
+              [05_train.py]                      [notebooks/04_eda_A.ipynb]
               Run 5 model experiments            EDA: patterns, charts, checks
               Track in MLflow
               Select best by PR-AUC
@@ -93,7 +93,7 @@ This is the starting point. It contains 151,112 rows of historical e-commerce pu
 | `browser` | string | Chrome, Firefox, IE, Safari, Opera |
 | `sex` | string | M or F |
 | `age` | int | Customer age |
-| `ip_address` | float | IP stored as a float (e.g. `732758369.0`) |
+| `ip_address` | float | IP stored as a float with fractional parts (e.g. `732758368.79972`); truncated to int64 by `src/common/ips.py` |
 | `class` | int | **Target: 1 = fraud, 0 = legitimate** |
 
 **Key facts from profiling (T1.2):**
@@ -115,9 +115,9 @@ There is also `data/raw/IpAddress_to_Country.csv` — a static IP-to-country fil
 
 1. **Loads the raw data** via `src/common/io.py → load_raw()`
 2. **Converts float IPs to integers** via `src/common/ips.py → series_to_ip_int()`
-   - e.g. `732758369.0` → `732758369` → `"43.164.5.1"`
+   - e.g. `732758368.79972` → `732758368` → `"43.173.1.96"`
    - This conversion rule is defined in one place and used everywhere
-3. **Deduplicates** — 151,112 rows but only 143,510 unique IPs (saves ~5% of API calls)
+3. **Deduplicates** — 151,112 rows but only 143,510 unique IPs after canonical truncation (saves ~5% of API calls)
 4. **Saves** `data/interim/unique_ips.csv`
 5. **Queries [ip-api.com](http://ip-api.com)** in batches of 100, waiting between batches to respect the free tier rate limit (15 batches/minute)
    - Saves after every batch → **safe to stop and resume**
@@ -160,7 +160,7 @@ There is also `data/raw/IpAddress_to_Country.csv` — a static IP-to-country fil
 
 **Match rate achieved:** 126 / 133 known geo-countries (94.7%). The 7 unmatched are non-sovereign territories (Guadeloupe, Puerto Rico, Isle of Man, etc.) that Transparency International does not score.
 
-**Files owned by:** Dev B
+**Files owned by:** bootstrapped by Dev A; reviewed by Dev B
 **Key source code:** `src/collect/cpi_scrape.py`
 
 ---
@@ -194,7 +194,7 @@ There is also `data/raw/IpAddress_to_Country.csv` — a static IP-to-country fil
 
 This is the **Contract C4** file. Its row count must equal the cleaned row count (or any difference must be explained in the cleaning log). Tests in `tests/test_data.py` enforce this.
 
-**Files owned by:** Dev C
+**Files owned by:** bootstrapped by Dev A; maintained by Dev C
 **Key source code:** `src/prep/clean.py`, `src/prep/merge.py`
 
 ---
@@ -237,7 +237,7 @@ This is the **Contract C4** file. Its row count must equal the cleaned row count
 
 **What is NOT in features.csv:** `user_id`, `device_id`, `ip_address`, `ip_int`, `transaction_id` as a model input. These are IDs, not signals. Using them would cause the model to memorise specific users/devices instead of learning patterns.
 
-**Files owned by:** Dev C
+**Files owned by:** bootstrapped by Dev A; maintained by Dev C
 **Key source code:** `src/features.py`
 
 ---
@@ -288,7 +288,7 @@ The model outputs a probability (0–1). We choose a cutoff threshold on **valid
 **What problem this solves:** The app and the model need to talk to each other. `score_orders()` is the bridge.
 
 **What it does:**
-- Accepts a DataFrame of raw order fields (what a merchant would export)
+- Accepts an order batch (currently the engineered feature columns in `models/input_spec.json`; building them from raw order fields is pending — T5.7)
 - Loads the saved model and threshold (lazy — only loads once)
 - Aligns the input columns to what the model expects
 - Returns for every row: `order_ref`, `risk_score` (0–1), `rank` (1 = highest risk), `review_flag` (True/False), `error` (message if something went wrong)
@@ -379,10 +379,10 @@ Stage B starts only after Stage A works end-to-end and the instructor confirms t
 
 | Person | Owns | Reviewed by |
 |---|---|---|
-| **Dev A** | `src/common/io.py`, `src/common/ips.py`, `src/collect/ip_lookup.py`, `scripts/01_collect_ips.py` | C |
-| **Dev B** | `src/collect/cpi_scrape.py`, `scripts/02_scrape_cpi.py`, `data/interim/country_name_map.csv` | C |
-| **Dev C** | `src/prep/clean.py`, `src/prep/merge.py`, `src/features.py`, `src/scoring.py`, `scripts/03`, `scripts/04`, `docs/cleaning_log.md`, `docs/features.md`, `tests/test_data.py`, `tests/test_features.py`, `tests/test_scoring.py`, `tests/fixtures/` | D |
-| **Dev D** | `src/evaluation.py`, `src/modeling/`, `scripts/05_train.py`, `models/`, `environment.yml`, `.github/`, `docs/contracts.md`, `docs/evaluation_plan.md`, `docs/model_card.md` | E |
+| **Dev A** | Bootstrap of `src/common/`, `src/collect/`, `src/prep/`, `src/features.py`, `src/scoring.py`, `src/evaluation.py`, `scripts/01`–`04`, `docs/contracts.md`, `docs/cleaning_log.md`, `docs/split_strategy.md`, `docs/data_sources.md` (file owner), `environment.yml`, `.github/`, `tests/` | C |
+| **Dev B** | `docs/data_sources.md` T2.3 comparison + review, `data/interim/country_name_map.csv` review, review of `src/collect/cpi_scrape.py` | C |
+| **Dev C** | Maintains `src/prep/`, `src/features.py`, `src/scoring.py`, `docs/features.md`, `docs/feature_availability.md` (T1.5, with E), `tests/test_data.py`, `tests/test_features.py`, `tests/test_scoring.py`, `tests/fixtures/` | D |
+| **Dev D** | `src/modeling/`, `scripts/05_train.py`, `models/`, `docs/evaluation_plan.md`, `docs/model_card.md`, `docs/instructor_answers.md`, `README.md` (T7.1) | E |
 | **Dev E** | `dashboard/`, `app/` | B |
 
 ---

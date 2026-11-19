@@ -12,8 +12,8 @@
 - **Stage Status:**
   - **Stage A (Active — MUST FINISH):** End-to-end data pipeline, feature engineering, ML models, evaluation by review capacity, visual dashboard (`dashboard/`), and standalone order-scoring app (`app/`).
   - **Stage B (Deferred):** Multi-tenant website with accounts, PostgreSQL, and auth. **DO NOT generate Stage B code** unless explicitly directed that Stage A is complete and approved.
-- **Data Pipeline State:** Phases 1–4 are **already bootstrapped and built**.
-  - `data/interim/ip_lookup.csv` (143,510 IPs resolved)
+- **Data Pipeline State:** Phases 1–4 artifact pipeline is **built through `data/processed/features.csv` and `src/evaluation.py`** (collection, cleaning, merging, features, evaluation). Remaining Phase 4 items: final review of the executed `notebooks/04_eda_A.ipynb` draft, and dashboard tasks T4.5–T4.7.
+  - `data/interim/ip_lookup.csv` (143,510 unique IPs queried, 122,975 resolved)
   - `data/interim/cpi.csv` & `country_name_map.csv` (182 countries)
   - `data/processed/transactions_merged.csv` (151,112 rows)
   - `data/processed/features.csv` (151,112 rows × 19 point-in-time features)
