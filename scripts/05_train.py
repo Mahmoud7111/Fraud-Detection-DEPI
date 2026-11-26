@@ -59,19 +59,27 @@ def train(max_flagged_share: float | None = None) -> None:
     baseline = run_experiment(
         "majority_class", DummyClassifier(strategy="most_frequent"),
         X_train, y_train, X_valid, y_valid,
+        scaler=None,
     )
     candidates = [
-        ("decision_tree", DecisionTreeClassifier(random_state=RANDOM_SEED)),
-        ("knn", KNeighborsClassifier(n_neighbors=5)),
+        # (name, model, scaler)
+        # Tree models are invariant to monotonic scaling — pass None.
+        # Distance/margin/linear models need RobustScaler for outlier-resistant normalisation.
+        ("decision_tree", DecisionTreeClassifier(random_state=RANDOM_SEED), None),
+        ("knn", KNeighborsClassifier(n_neighbors=5), "robust"),
         ("random_forest", RandomForestClassifier(
             n_estimators=200, class_weight="balanced", random_state=RANDOM_SEED
-        )),
-        *logistic_regression_candidates(),
-        ("svm_sample", SVC(probability=True, class_weight="balanced", random_state=RANDOM_SEED)),
+        ), None),
+        *[(name, model, "robust") for name, model in logistic_regression_candidates()],
+        ("svm_sample", SVC(probability=True, class_weight="balanced", random_state=RANDOM_SEED), "robust"),
     ]
 
     best_pr_auc = -1.0
-    for name, model in candidates:
+    best_name: str | None = None
+    best_pipeline = None
+    best_scores = None
+    best_training_rows = 0
+    for name, model, scaler in candidates:
         train_x, train_y = X_train, y_train
         if name == "svm_sample" and len(X_train) > SVM_TRAIN_ROWS:
             train_x, _, train_y, _ = train_test_split(
@@ -80,12 +88,16 @@ def train(max_flagged_share: float | None = None) -> None:
             )
         fitted, scores, metrics = fit_experiment(
             name, model, train_x, train_y, X_valid, y_valid,
+            scaler=scaler,
             extra_params=model.get_params(deep=False),
         )
         if metrics["pr_auc"] > best_pr_auc:
             best_name, best_pipeline, best_scores = name, fitted, scores
             best_pr_auc = metrics["pr_auc"]
             best_training_rows = len(train_x)
+
+    if best_pipeline is None or best_scores is None or best_name is None:
+        raise RuntimeError("No candidates were trained. The candidates list is empty.")
 
     threshold = choose_threshold(y_valid, best_scores, max_flagged_share)
     validation_metrics = evaluate(y_valid, best_scores, threshold=threshold)

@@ -18,10 +18,11 @@ import mlflow
 import numpy as np
 import pandas as pd
 from sklearn.base import clone
+from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import precision_recall_curve
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler, RobustScaler, StandardScaler
 
 from src.config import (
     FEATURES_CSV,
@@ -37,6 +38,74 @@ logger = logging.getLogger(__name__)
 NON_FEATURE_COLUMNS = {
     "class", "split", "transaction_id", "user_id", "device_id", "ip_address", "ip_int",
 }
+
+# Continuous numeric features that benefit from scaling.
+# Binary 0/1 indicator columns (e.g. sex_male, source_ads, browser_chrome,
+# is_proxy, ip_lookup_ok, cpi_matched) are intentionally excluded so they
+# pass through unscaled and preserve their natural sparsity/interpretability.
+NUMERIC_FEATURE_SET = {
+    "seconds_since_signup",
+    "hour_of_day",
+    "day_of_week",
+    "purchase_value",
+    "age",
+    "cpi_score",
+    "users_per_device",
+    "users_per_ip",
+}
+
+
+def build_preprocessor(
+    scaler: str | None = "robust",
+    feature_cols: list | None = None,
+) -> ColumnTransformer:
+    """Build a ColumnTransformer that scales continuous features and passes binary indicators through.
+
+    Parameters
+    ----------
+    scaler : {"robust", "standard", "minmax", None}, default="robust"
+        - ``"robust"``    : RobustScaler (median & IQR — outlier-resistant; best for fraud data).
+        - ``"standard"``  : StandardScaler (zero-mean, unit-variance).
+        - ``"minmax"``    : MinMaxScaler ([0, 1] bounds).
+        - ``None``        : No scaling — recommended for tree-based models (DecisionTree, RandomForest).
+    feature_cols : list of str, optional
+        Columns present in the DataFrame being fitted.  When omitted, all
+        columns in NUMERIC_FEATURE_SET are assumed present.  Any column
+        not in NUMERIC_FEATURE_SET is treated as a binary indicator and
+        passed through unscaled, enabling automatic ablation support.
+
+    Returns
+    -------
+    ColumnTransformer
+    """
+    if scaler == "robust":
+        num_scaler = RobustScaler()
+    elif scaler == "standard":
+        num_scaler = StandardScaler()
+    elif scaler == "minmax":
+        num_scaler = MinMaxScaler()
+    elif scaler is None:
+        num_scaler = None
+    else:
+        raise ValueError(
+            f"Unknown scaler {scaler!r}. Use 'robust', 'standard', 'minmax', or None."
+        )
+
+    cols = feature_cols or list(NUMERIC_FEATURE_SET)
+    num_cols = [c for c in cols if c in NUMERIC_FEATURE_SET]
+    bin_cols = [c for c in cols if c not in NUMERIC_FEATURE_SET]
+
+    num_steps: list = [("imputer", SimpleImputer(strategy="median"))]
+    if num_scaler is not None:
+        num_steps.append(("scaler", num_scaler))
+
+    transformers: list[tuple[str, str | Pipeline, list[str]]] = []
+    if num_cols:
+        transformers.append(("num", Pipeline(num_steps), num_cols))
+    if bin_cols:
+        transformers.append(("bin", "passthrough", bin_cols))
+
+    return ColumnTransformer(transformers=transformers, remainder="passthrough")
 
 
 def load_splits(features_path=None):
@@ -73,11 +142,12 @@ def run_experiment(
     X_valid: pd.DataFrame,
     y_valid,
     threshold: float | None = None,
+    scaler: str | None = "robust",
     extra_params: dict | None = None,
 ) -> dict:
     """Train and log a model, returning the shared validation metrics dictionary."""
     _, _, metrics = fit_experiment(
-        name, model, X_train, y_train, X_valid, y_valid, threshold, extra_params
+        name, model, X_train, y_train, X_valid, y_valid, threshold, scaler, extra_params
     )
     return metrics
 
@@ -90,9 +160,18 @@ def fit_experiment(
     X_valid: pd.DataFrame,
     y_valid,
     threshold: float | None = None,
+    scaler: str | None = "robust",
     extra_params: dict | None = None,
 ) -> tuple[Pipeline, np.ndarray, dict]:
-    """Fit on training data and return the pipeline, validation scores, and metrics."""
+    """Fit on training data and return the pipeline, validation scores, and metrics.
+
+    Parameters
+    ----------
+    scaler : {"robust", "standard", "minmax", None}, default="robust"
+        Passed to ``build_preprocessor``.  Use ``None`` for tree-based models
+        (DecisionTree, RandomForest) which are invariant to monotonic scaling.
+        Use ``"robust"`` for distance- or margin-based models (KNN, SVM, LogReg).
+    """
     excluded = NON_FEATURE_COLUMNS.intersection(X_train.columns)
     if excluded:
         raise ValueError(f"Remove metadata before training: {', '.join(sorted(excluded))}")
@@ -103,23 +182,27 @@ def fit_experiment(
         mlflow.log_params({
             **(extra_params or {}),
             "model": name,
+            "scaler": str(scaler),
             "random_seed": RANDOM_SEED,
             "training_rows": len(X_train),
         })
 
-        pipeline = Pipeline([
-            ("imputer", SimpleImputer(strategy="median")),
-            ("scaler", StandardScaler()),
+        fitted_pipeline = Pipeline([
+            ("preprocessor", build_preprocessor(
+                scaler=scaler, feature_cols=list(X_train.columns)
+            )),
             ("clf", clone(model)),
         ])
 
-        pipeline.fit(X_train, y_train)
-        scores = pipeline.predict_proba(X_valid)[:, 1]
+        fitted_pipeline.fit(X_train, y_train)
+        scores = fitted_pipeline.predict_proba(X_valid)[:, 1]
         metrics = evaluate(y_valid, scores, threshold=threshold)
         log_evaluation(metrics)
 
-        logger.info("%s validation PR-AUC=%.4f", name, metrics["pr_auc"])
-        return pipeline, scores, metrics
+        logger.info(
+            "%s validation PR-AUC=%.4f (scaler=%s)", name, metrics["pr_auc"], scaler
+        )
+        return fitted_pipeline, scores, metrics
 
 
 def log_evaluation(metrics: dict, prefix: str = "") -> None:
