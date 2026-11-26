@@ -124,9 +124,21 @@ python scripts/03_build_dataset.py         # ✅ done — 151,112 rows, 84.8% CP
 # 4. Generate point-in-time features with chronological train/valid/test split
 python scripts/04_build_features.py        # ✅ done — 151,112 rows × 19 features; 61/61 tests passing
 
-# 5. Train all model families, track runs in MLflow, and evaluate on validation data
+# 5. Compare model families, evaluate the selected model, and save it
 python scripts/05_train.py                 # ⏸ after gate G1
 ```
+
+### Train and hand off the model
+
+Once `data/processed/features.csv` is ready and the modeling gate is cleared, run the training
+command from the project root. To evaluate against a review budget of 5% of validation orders,
+run `python scripts/05_train.py --max-flagged-share 0.05`. The default selects the threshold
+with the highest validation F1. The selected model is evaluated once on the held-out test split.
+
+MLflow tracks candidate runs in the `fraud-detection` experiment and records the final validation
+and test metrics in the `selected_model` run. Copy the final metrics and limitations into
+[the model card](docs/model_card.md). Give Dev C the three files in `models/` from the same run
+and Dev E the held-out metrics for the dashboard.
 
 ---
 
@@ -177,17 +189,17 @@ python scripts/05_train.py                 # ⏸ after gate G1
 | T4.4 | Build `features.csv` and tests | **A** | ✅ Done — 151,112 rows × 19 features, 61/61 tests passing |
 | T4.5 | Historical dashboard draft | E | ⏸ Not started |
 | T4.6 | Check dashboard numbers | B | ⏸ Not started |
-| T4.7 | Evaluation plan | D | 🟡 Draft — proposed target; confirm at G1 |
+| T4.7 | Evaluation plan | D | Draft documents metrics and threshold selection |
 | T4.8 | `src/evaluation.py` and tests | **A** | ✅ Done — 8 evaluation tests passing |
 
 ### Phase 5 — Modeling (after Gate G1)
 
 | Task | Description | Owner | Status |
 |---|---|---|---|
-| T5.1 | Shared training harness | D | ⏸ Stub written |
-| T5.2 | Five model experiments | A, B, C, D, E | ⏸ Not started |
+| T5.1 | Shared training harness | D | Implemented and verified on the test fixture |
+| T5.2 | Five model experiments | A, B, C, D, E | Logistic regression tuning implemented. Full comparison pending |
 | T5.3 | Ablation (IP features, CPI) | **B** leads | ⏸ Not started |
-| T5.4–5.6 | Select model, threshold, save package | D | ⏸ Not started |
+| T5.4–5.6 | Select model, threshold, save package | D | Code verified on the test fixture. Full-data results pending |
 | T5.7–5.8 | `score_orders()` + parity test | **C** | ⏸ Stub written |
 
 ### Phase 6 — Delivery & Phase 7 — Documentation

@@ -16,7 +16,7 @@ A merchant reviews orders before shipping. Review capacity is limited (e.g. 50�
 |---|---|
 | **PR-AUC** (precision-recall area under curve) | The dataset is imbalanced; PR-AUC is more informative than ROC-AUC in this regime. Used to select the best model. |
 | **ROC-AUC** | Secondary; easier to explain to stakeholders. |
-| **Frauds in top k** (k = 10, 50, 100) | Directly answers the merchant's question. Computed at the agreed threshold. |
+| **Frauds in top k** (k = 10, 50, 100) | Counts confirmed frauds among the top-ranked orders in each evaluation split. The score ranking determines the top k independently of the threshold. |
 | **Precision and recall at threshold** | Shows the trade-off the merchant accepts. |
 | **F1 at threshold** | Harmonic mean; useful for a single headline number. |
 | **Flagged share** | What fraction of orders go to review? Controls reviewer workload. |
@@ -28,8 +28,11 @@ Accuracy is **not** a primary metric (misleading with class imbalance).
 ## Threshold selection (Decision D8)
 
 - Threshold is chosen on **validation data only**. The test set is not seen until T5.5.
-- Plot the precision-recall curve on validation data.
-- Proposed default: choose the threshold that achieves **precision ≥ 0.50** at the highest recall, OR the threshold that maximises F1 — confirm with the instructor/team at Gate G1. If the merchant states a review-capacity budget, derive the threshold from the top-k budget instead.
+- The training command chooses the validation threshold with the highest F1. If
+  thresholds tie on F1, it uses the higher threshold so fewer orders go to review.
+- To limit review volume, pass `--max-flagged-share` to the training script.
+  For example, `--max-flagged-share 0.05` caps the validation review queue at 5%.
+  The share flagged on the test set may differ.
 - Document the chosen target and rationale in `docs/model_card.md`.
 
 ---
@@ -37,15 +40,23 @@ Accuracy is **not** a primary metric (misleading with class imbalance).
 ## Comparison protocol
 
 All five models (T5.2) must use:
-- The same `features.csv` and the same split.
-- The same `run_experiment()` harness in `src/modeling/pipeline.py`.
+- The same checkout features from `features.csv` and the same validation split.
+- The shared training harness in `src/modeling/pipeline.py`.
 - The same `evaluate()` function from `src/evaluation.py`.
 - MLflow to log every run so they appear in one comparison table.
+
+The majority-class baseline uses the full training split. Logistic regression
+compares three regularization strengths. SVM uses a stratified sample of up to
+5,000 training rows with seed 42.
 
 ---
 
 ## Limitations to report
 
-- The model was trained and evaluated on historical data (~2015). Performance on current data is unknown.
-- Some orders lack IP or CPI data (failed lookups / unmatched countries). Their risk scores are based on the remaining features only.
+- The training data consists of historical purchases (~2015). Performance on current data is unknown.
+- The Stage A training command uses checkout-derived features. The saved pipeline
+  requires `purchase_time` and `purchase_value` and accepts optional
+  `signup_time`, `age`, `sex`, `source`, and `browser`.
+- Historical device/IP counts and newer IP/CPI enrichment are excluded from this
+  comparison. The enriched data remains available for separate ablations.
 - The threshold was chosen for this dataset's fraud rate. A merchant with a different fraud rate would need to recalibrate.

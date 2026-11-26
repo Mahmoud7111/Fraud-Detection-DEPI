@@ -238,9 +238,8 @@ This is the **Contract C4** file. Its row count must equal the cleaned row count
 
 **What is NOT in features.csv:** `user_id`, `device_id`, `ip_address`, `ip_int`, `transaction_id` as a model input. These are IDs, not signals. Using them would cause the model to memorise specific users/devices instead of learning patterns.
 
-**Files owned by:** bootstrapped by Dev A; maintained by Dev C  
-**Key source code:** `src/features.py`  
-**Preprocessing & scaling standards:** `docs/preprocessing_guide.md`
+**Files owned by:** bootstrapped by Dev A; maintained by Dev C
+**Key source code:** `src/features.py`
 
 ---
 
