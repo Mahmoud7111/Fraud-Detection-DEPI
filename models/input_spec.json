@@ -1,0 +1,21 @@
+{
+  "seconds_since_signup": "float",
+  "hour_of_day": "float",
+  "day_of_week": "float",
+  "purchase_value": "float",
+  "age": "float",
+  "sex_male": "float",
+  "source_ads": "float",
+  "source_seo": "float",
+  "browser_chrome": "float",
+  "browser_firefox": "float",
+  "browser_ie": "float",
+  "browser_safari": "float",
+  "ip_lookup_ok": "float",
+  "is_proxy": "float",
+  "is_hosting": "float",
+  "cpi_score": "float",
+  "cpi_matched": "float",
+  "users_per_device": "float",
+  "users_per_ip": "float"
+}
