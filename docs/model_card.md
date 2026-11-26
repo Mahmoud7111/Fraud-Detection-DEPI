@@ -17,6 +17,11 @@ _Owner: Dev D (Tasks T5.4, T5.5, T5.6)._
 | **Threshold set on** | Validation data only |
 | **Date trained** | _(fill in)_ |
 
+The training script compares models using the 12 checkout-derived features in
+`src/modeling/order_inputs.py`. The saved pipeline converts raw checkout input
+to the same columns before scoring. Both `purchase_time` and `purchase_value`
+are required. The signup timestamp, age, sex, source, and browser are optional.
+
 ---
 
 ## Training data
@@ -24,12 +29,17 @@ _Owner: Dev D (Tasks T5.4, T5.5, T5.6)._
 | Field | Value |
 |---|---|
 | Dataset | Fraud_Data.csv (Kaggle, ~2015 e-commerce transactions) |
-| Train rows | _(fill in)_ |
-| Valid rows | _(fill in)_ |
-| Test rows | _(fill in)_ |
-| Fraud rate (train) | _(fill in)_ |
+| Train rows | 105,778 |
+| Validation rows | 22,666 |
+| Test rows | 22,668 |
+| Fraud rate (train) | 11.42% |
+| Fraud rate (validation) | 4.59% |
+| Fraud rate (test) | 4.56% |
 | Split strategy | See `docs/split_strategy.md` |
 | Random seed | 42 |
+
+Split counts and class balance were verified on the cleaned dataset using the
+same assignment function as the feature generation script.
 
 ---
 
@@ -67,7 +77,7 @@ _Owner: Dev D (Tasks T5.4, T5.5, T5.6)._
 ## Limitations
 
 - Trained on ~2015 transaction data. Fraud patterns may have changed.
-- IP geolocation used the free ip-api tier (HTTP only, non-commercial), with ~___% lookup success.
-- CPI scores matched for ___% of countries; unmatched rows use median imputation.
-- Some features (`users_per_device`, `users_per_ip`) require historical data at prediction time and may not be available in a real production API context.
+- The Stage A model excludes IP geolocation, CPI scores, and the shared device
+  and IP counts. The enriched dataset supports separate comparisons when these
+  features are validated for availability at the time of the transaction.
 - The threshold was chosen for this dataset's base fraud rate and would need recalibration for a merchant with a different rate.
