@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import mlflow
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
@@ -69,6 +69,12 @@ def train(max_flagged_share: float | None = None) -> None:
         ("knn", KNeighborsClassifier(n_neighbors=5), "robust"),
         ("random_forest", RandomForestClassifier(
             n_estimators=200, class_weight="balanced", random_state=RANDOM_SEED
+        ), None),
+        # Gradient boosting: handles missing values natively, no scaling needed
+        ("hist_gradient_boosting", HistGradientBoostingClassifier(
+            max_iter=250, learning_rate=0.05, max_leaf_nodes=31,
+            min_samples_leaf=20, l2_regularization=1.0,
+            class_weight="balanced", random_state=RANDOM_SEED,
         ), None),
         *[(name, model, "robust") for name, model in logistic_regression_candidates()],
         ("svm_sample", SVC(probability=True, class_weight="balanced", random_state=RANDOM_SEED), "robust"),
