@@ -3,6 +3,11 @@ Script: 05_train.py
 Task: T5.1 + T5.2 + T5.4 + T5.5 + T5.6
 Owner: Dev D
 
+Each model family lives in its own src/modeling/experiments/<family>.py
+file and exposes a *_candidates() generator of (name, model) pairs.
+05_train.py collects them all, attaches the correct scaler per algorithm
+family, and runs the shared fit_experiment() harness.
+
 Run:
     python scripts/05_train.py
     python scripts/05_train.py --max-flagged-share 0.05
@@ -17,17 +22,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import mlflow
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
-from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
 
 from src.config import RANDOM_SEED
 from src.evaluation import evaluate
+from src.modeling.experiments.decision_tree import decision_tree_candidates
+from src.modeling.experiments.knn import knn_candidates
 from src.modeling.experiments.logistic_regression import logistic_regression_candidates
+from src.modeling.experiments.random_forest import random_forest_candidates
+from src.modeling.experiments.svm import svm_candidates
 from src.modeling.order_inputs import ORDER_FEATURES, RAW_ORDER_TYPES, order_features
 from src.modeling.pipeline import (
     choose_threshold,
@@ -40,6 +45,34 @@ from src.modeling.pipeline import (
 
 logger = logging.getLogger(__name__)
 SVM_TRAIN_ROWS = 5_000
+
+
+def _all_candidates():
+    """Yield (name, model, scaler) for every experiment.
+
+    Scaler convention (matches build_preprocessor):
+      None     — tree models (invariant to monotonic scaling)
+      "robust" — distance / margin / linear models
+    """
+    # Dev A — Decision Tree (T5.2)
+    for name, model in decision_tree_candidates():
+        yield name, model, None
+
+    # Dev B — KNN (T5.2): distance metric requires outlier-resistant scaling
+    for name, model in knn_candidates():
+        yield name, model, "robust"
+
+    # Dev C — Random Forest & Gradient Boosting (T5.2): tree ensembles, no scaling
+    for name, model in random_forest_candidates():
+        yield name, model, None
+
+    # Dev D — Logistic Regression (T5.2): linear model, needs robust scaling
+    for name, model in logistic_regression_candidates():
+        yield name, model, "robust"
+
+    # Dev E — SVM on a stratified sample (T5.2): margin model, needs robust scaling
+    for name, model in svm_candidates():
+        yield name, model, "robust"
 
 
 def train(max_flagged_share: float | None = None) -> None:
@@ -61,31 +94,14 @@ def train(max_flagged_share: float | None = None) -> None:
         X_train, y_train, X_valid, y_valid,
         scaler=None,
     )
-    candidates = [
-        # (name, model, scaler)
-        # Tree models are invariant to monotonic scaling — pass None.
-        # Distance/margin/linear models need RobustScaler for outlier-resistant normalisation.
-        ("decision_tree", DecisionTreeClassifier(random_state=RANDOM_SEED), None),
-        ("knn", KNeighborsClassifier(n_neighbors=5), "robust"),
-        ("random_forest", RandomForestClassifier(
-            n_estimators=200, class_weight="balanced", random_state=RANDOM_SEED
-        ), None),
-        # Gradient boosting: handles missing values natively, no scaling needed
-        ("hist_gradient_boosting", HistGradientBoostingClassifier(
-            max_iter=250, learning_rate=0.05, max_leaf_nodes=31,
-            min_samples_leaf=20, l2_regularization=1.0,
-            class_weight="balanced", random_state=RANDOM_SEED,
-        ), None),
-        *[(name, model, "robust") for name, model in logistic_regression_candidates()],
-        ("svm_sample", SVC(probability=True, class_weight="balanced", random_state=RANDOM_SEED), "robust"),
-    ]
 
     best_pr_auc = -1.0
     best_name: str | None = None
     best_pipeline = None
     best_scores = None
     best_training_rows = 0
-    for name, model, scaler in candidates:
+
+    for name, model, scaler in _all_candidates():
         train_x, train_y = X_train, y_train
         if name == "svm_sample" and len(X_train) > SVM_TRAIN_ROWS:
             train_x, _, train_y, _ = train_test_split(
@@ -143,3 +159,4 @@ if __name__ == "__main__":
     if args.max_flagged_share is not None and not 0 <= args.max_flagged_share <= 1:
         parser.error("--max-flagged-share must be between 0 and 1")
     train(args.max_flagged_share)
+

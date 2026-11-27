@@ -30,6 +30,11 @@ env/
 # ── MLflow ────────────────────────────────────────────────────────────────────
 mlruns/
 mlartifacts/
+mlflow.db
+
+# ── Trained model artifacts (rebuilt by scripts/05_train.py) ─────────────────
+models/*.joblib
+models/*.json
 
 # ── Secrets and credentials ───────────────────────────────────────────────────
 *.pem
