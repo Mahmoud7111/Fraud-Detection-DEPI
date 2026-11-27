@@ -75,18 +75,24 @@ def _all_candidates():
         yield name, model, "robust"
 
 
-def train(max_flagged_share: float | None = None) -> None:
+def train(
+    max_flagged_share: float | None = None,
+    feature_mode: str = "full",
+) -> None:
     """Train comparable models and publish the selected Stage A package."""
     if max_flagged_share is not None and not 0 <= max_flagged_share <= 1:
         raise ValueError("The maximum flagged share must be between 0 and 1.")
+    if feature_mode not in {"full", "checkout"}:
+        raise ValueError("feature_mode must be 'full' or 'checkout'.")
 
     X_train, y_train, X_valid, y_valid, X_test, y_test = load_splits()
-    X_train = X_train[ORDER_FEATURES]
-    X_valid = X_valid[ORDER_FEATURES]
+    feature_cols = list(X_train.columns) if feature_mode == "full" else ORDER_FEATURES
+    X_train = X_train[feature_cols]
+    X_valid = X_valid[feature_cols]
     mlflow.set_experiment("fraud-detection")
     logger.info(
-        "Data loaded. Train: %d | Valid: %d | Test: %d",
-        len(X_train), len(X_valid), len(X_test),
+        "Data loaded (%s mode, %d features). Train: %d | Valid: %d | Test: %d",
+        feature_mode, len(feature_cols), len(X_train), len(X_valid), len(X_test),
     )
 
     baseline = run_experiment(
@@ -123,11 +129,13 @@ def train(max_flagged_share: float | None = None) -> None:
 
     threshold = choose_threshold(y_valid, best_scores, max_flagged_share)
     validation_metrics = evaluate(y_valid, best_scores, threshold=threshold)
-    test_scores = best_pipeline.predict_proba(X_test[ORDER_FEATURES])[:, 1]
+    test_scores = best_pipeline.predict_proba(X_test[feature_cols])[:, 1]
     test_metrics = evaluate(y_test, test_scores, threshold=threshold)
     with mlflow.start_run(run_name="selected_model"):
         mlflow.log_params({
             "model": best_name,
+            "feature_mode": feature_mode,
+            "feature_count": len(feature_cols),
             "max_flagged_share": max_flagged_share,
             "training_rows": best_training_rows,
             "validation_rows": len(X_valid),
@@ -136,11 +144,16 @@ def train(max_flagged_share: float | None = None) -> None:
         log_evaluation(validation_metrics, prefix="valid_")
         log_evaluation(test_metrics, prefix="test_")
 
-    serving_pipeline = Pipeline([
-        ("order_features", FunctionTransformer(order_features)),
-        ("fraud_model", best_pipeline),
-    ])
-    save_pipeline(serving_pipeline, threshold, list(RAW_ORDER_TYPES))
+    if feature_mode == "checkout":
+        serving_pipeline = Pipeline([
+            ("order_features", FunctionTransformer(order_features)),
+            ("fraud_model", best_pipeline),
+        ])
+        input_cols = list(RAW_ORDER_TYPES)
+    else:
+        serving_pipeline = best_pipeline
+        input_cols = feature_cols
+    save_pipeline(serving_pipeline, threshold, input_cols)
     logger.info(
         "Selected %s. Validation PR-AUC %.4f (baseline %.4f), threshold %.6g, test PR-AUC %.4f",
         best_name, best_pr_auc, baseline["pr_auc"], threshold, test_metrics["pr_auc"],
@@ -155,8 +168,12 @@ if __name__ == "__main__":
         "--max-flagged-share", type=float,
         help="Optional validation review limit between 0 and 1. Defaults to maximum validation F1.",
     )
+    parser.add_argument(
+        "--feature-mode", choices=("full", "checkout"), default="full",
+        help="Use all 19 engineered features (default) or only the 12 checkout-only features.",
+    )
     args = parser.parse_args()
     if args.max_flagged_share is not None and not 0 <= args.max_flagged_share <= 1:
         parser.error("--max-flagged-share must be between 0 and 1")
-    train(args.max_flagged_share)
+    train(args.max_flagged_share, feature_mode=args.feature_mode)
 
